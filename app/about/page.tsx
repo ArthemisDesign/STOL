@@ -119,7 +119,7 @@ export default function AboutPage() {
               craftspeople in California who share our obsession with material
               honesty and structural integrity. We work in solid hardwoods, natural
               textiles, and hand-forged metals — nothing veneer, nothing composite,
-              nothing that pretends to be something it isn't. The craftsmanship is
+              nothing that pretends to be something it isn&apos;t. The craftsmanship is
               visible in the joinery, in the hand-applied finish, in the way a
               drawer slides closed with barely a sound.
             </p>

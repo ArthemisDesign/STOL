@@ -11,12 +11,9 @@ interface ProductGalleryProps {
 
 export default function ProductGallery({ images, name }: ProductGalleryProps) {
   const [selected, setSelected] = useState(0);
-  // Keep track of direction to correctly slide the crossfade
-  const [prev, setPrev] = useState<number | null>(null);
 
   function select(i: number) {
     if (i === selected) return;
-    setPrev(selected);
     setSelected(i);
   }
 
