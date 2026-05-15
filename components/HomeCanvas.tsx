@@ -37,38 +37,35 @@ type TileCard = { id: number; x: number; y: number; w: number };
  * Called once per page load (inside useEffect, client-side only).
  */
 function generateTilePositions(): TileCard[] {
-  const EDGE   = 140; // min distance from tile border
-  const GAP    = 70;  // min gap between two cards
-  const TRIES  = 300; // attempts before accepting overlap
+  const EDGE  = 200; // min distance from tile border
+  const GAP   = 110; // guaranteed gap between any two cards
+  const TRIES = 800; // attempts per card before skipping
 
   const placed: TileCard[] = [];
 
-  // Shuffle insertion order for more variety
   const order = [...BASE_CARDS].sort(() => Math.random() - 0.5);
 
   for (const card of order) {
     const xMax = TILE_W - card.w - EDGE;
     const yMax = TILE_H - card.w - EDGE;
-    let chosen = { x: EDGE, y: EDGE };
+    let chosen: { x: number; y: number } | null = null;
 
     for (let t = 0; t < TRIES; t++) {
       const x = Math.round(EDGE + Math.random() * (xMax - EDGE));
       const y = Math.round(EDGE + Math.random() * (yMax - EDGE));
 
-      const clash = placed.some(p => {
-        return (
-          x < p.x + p.w + GAP &&
-          x + card.w + GAP > p.x &&
-          y < p.y + p.w + GAP &&
-          y + card.w + GAP > p.y
-        );
-      });
+      const clash = placed.some(p =>
+        x < p.x + p.w + GAP &&
+        x + card.w + GAP > p.x &&
+        y < p.y + p.w + GAP &&
+        y + card.w + GAP > p.y
+      );
 
       if (!clash) { chosen = { x, y }; break; }
-      if (t === TRIES - 1) chosen = { x, y }; // accept best effort
     }
 
-    placed.push({ id: card.id, x: chosen.x, y: chosen.y, w: card.w });
+    // Only place if a non-overlapping spot was found
+    if (chosen) placed.push({ id: card.id, x: chosen.x, y: chosen.y, w: card.w });
   }
 
   return placed;
