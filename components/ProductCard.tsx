@@ -21,7 +21,7 @@ export default function ProductCard({ product, index, feed = false }: ProductCar
     return (
       <Link
         href={`/products/${product.slug}`}
-        className="group flex items-center gap-6 py-5 hover:bg-[rgba(166,141,116,0.04)] transition-colors px-0"
+        className="group flex items-center gap-6 py-5 hover:bg-[rgba(255,240,210,0.04)] transition-colors px-0"
       >
         <div className="relative flex-shrink-0 overflow-hidden" style={{ width: 72, height: 72, backgroundColor: "#EDE8E3" }}>
           <Image src={img1} alt={product.name} fill className="object-cover" sizes="72px" />
@@ -81,7 +81,7 @@ export default function ProductCard({ product, index, feed = false }: ProductCar
         >
           <span
             className="font-body select-none"
-            style={{ fontSize: "18px", color: "rgba(26,26,26,0.35)", lineHeight: 1 }}
+            style={{ fontSize: "18px", color: "rgba(237,232,224,0.25)", lineHeight: 1 }}
           >
             +
           </span>

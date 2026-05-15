@@ -445,6 +445,9 @@ export default function HomeCanvas() {
         onPointerUp={onPointerUp}
         onPointerCancel={onPointerUp}
       >
+        {/* Concrete texture overlay */}
+        <div className="concrete-texture" />
+
         {/* Canvas layer — transform is applied here */}
         <div
           ref={canvasRef}
@@ -475,7 +478,7 @@ export default function HomeCanvas() {
                 }}
               >
                 {/* Inner clip — keeps the image inside the card boundary */}
-                <div style={{ width: "100%", height: "100%", overflow: "hidden", backgroundColor: "#EDE8E3" }}>
+                <div style={{ width: "100%", height: "100%", overflow: "hidden", backgroundColor: "#1A1814" }}>
                   <Link
                     href={`/products/${slug}`}
                     onClick={e => { if (didDrag.current) e.preventDefault(); }}
@@ -518,7 +521,7 @@ export default function HomeCanvas() {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <span
             className="font-body font-light select-none"
-            style={{ fontSize: "22px", lineHeight: 1, color: "rgba(26,26,26,0.12)" }}
+            style={{ fontSize: "22px", lineHeight: 1, color: "rgba(255,240,210,0.10)" }}
           >
             +
           </span>
@@ -532,7 +535,7 @@ export default function HomeCanvas() {
           {/* Zoom percentage */}
           <span
             className="font-body tabular-nums select-none"
-            style={{ fontSize: "11px", letterSpacing: "0.08em", color: "rgba(107,101,96,0.55)" }}
+            style={{ fontSize: "11px", letterSpacing: "0.08em", color: "rgba(160,150,140,0.55)" }}
           >
             {zoomPct}%
           </span>

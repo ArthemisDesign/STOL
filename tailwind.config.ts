@@ -9,11 +9,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "#F5F0EB",
-        "text-primary": "#1A1A1A",
-        "text-secondary": "#6B6560",
-        accent: "#C4A882",
-        white: "#FFFFFF",
+        background:     "#0F0F0F",
+        "text-primary": "#EDE8E0",
+        "text-secondary":"#7A7470",
+        accent:         "#C4A882",
+        white:          "#FFFFFF",
       },
       fontFamily: {
         heading: ["var(--font-tt-chocolates)", "sans-serif"],

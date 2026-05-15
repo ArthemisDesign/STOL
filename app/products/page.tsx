@@ -22,7 +22,7 @@ function Toolbar({
 }) {
   const { T } = useLanguage();
   const [open, setOpen] = useState(false);
-  const sep = "rgba(166,141,116,0.18)";
+  const sep = "rgba(255,240,210,0.08)";
 
   return (
     <>
@@ -30,7 +30,7 @@ function Toolbar({
         <button
           onClick={() => setOpen(v => !v)}
           className="flex items-center gap-1 font-body transition-colors"
-          style={{ fontSize: "11px", letterSpacing: "0.06em", color: open ? "#1A1A1A" : "rgba(107,101,96,0.7)" }}
+          style={{ fontSize: "11px", letterSpacing: "0.06em", color: open ? "#EDE8E0" : "rgba(160,150,140,0.7)" }}
         >
           <span style={{ textDecoration: open ? "underline" : "none" }}>{T.products.filter}</span>
           <span style={{ fontSize: "13px", lineHeight: 1 }}>{open ? "−" : "+"}</span>
@@ -43,9 +43,9 @@ function Toolbar({
         </div>
 
         <div className="flex items-center font-body" style={{ fontSize: "11px", letterSpacing: "0.06em" }}>
-          <button onClick={() => setView("feed")} className="transition-colors" style={{ color: view === "feed" ? "#1A1A1A" : "rgba(107,101,96,0.4)" }}>{T.products.feed}</button>
-          <span className="mx-2" style={{ color: "rgba(107,101,96,0.25)" }}>|</span>
-          <button onClick={() => setView("grid")} className="transition-colors" style={{ color: view === "grid" ? "#1A1A1A" : "rgba(107,101,96,0.4)" }}>{T.products.grid}</button>
+          <button onClick={() => setView("feed")} className="transition-colors" style={{ color: view === "feed" ? "#EDE8E0" : "rgba(160,150,140,0.4)" }}>{T.products.feed}</button>
+          <span className="mx-2" style={{ color: "rgba(160,150,140,0.25)" }}>|</span>
+          <button onClick={() => setView("grid")} className="transition-colors" style={{ color: view === "grid" ? "#EDE8E0" : "rgba(160,150,140,0.4)" }}>{T.products.grid}</button>
         </div>
       </div>
 
@@ -59,7 +59,7 @@ function Toolbar({
                   key={value}
                   onClick={() => { setFilter(value as FilterValue); setOpen(false); }}
                   className="font-heading transition-all duration-200"
-                  style={{ fontSize: active ? "14px" : "13px", color: active ? "#1A1A1A" : "rgba(107,101,96,0.45)", whiteSpace: "nowrap" }}
+                  style={{ fontSize: active ? "14px" : "13px", color: active ? "#EDE8E0" : "rgba(160,150,140,0.45)", whiteSpace: "nowrap" }}
                 >
                   {label}
                 </button>
@@ -69,7 +69,7 @@ function Toolbar({
         </div>
       </div>
 
-      <div className="px-6 md:px-10 flex items-center justify-between" style={{ height: "36px", borderBottom: "1px solid rgba(166,141,116,0.10)" }}>
+      <div className="px-6 md:px-10 flex items-center justify-between" style={{ height: "36px", borderBottom: "1px solid rgba(255,240,210,0.06)" }}>
         <span className="font-body text-text-secondary/40" style={{ fontSize: "11px" }}>
           ({String(count).padStart(2, "0")})
         </span>

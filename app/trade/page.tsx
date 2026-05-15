@@ -57,7 +57,7 @@ export default function TradePage() {
       </section>
 
       {/* 3. APPLICATION FORM */}
-      <section className="border-t border-accent/20 bg-white">
+      <section className="border-t border-accent/20 bg-[#0A0A0A]">
         <div className="max-w-screen-xl mx-auto px-6 md:px-10 py-20 md:py-28">
           <div className="grid grid-cols-1 lg:grid-cols-[2fr_3fr] gap-12 lg:gap-20 items-start">
 
@@ -87,7 +87,7 @@ export default function TradePage() {
               </ul>
             </div>
 
-            <div className="border border-[#D4CFC9] p-8 md:p-12">
+            <div className="border border-[rgba(255,240,210,0.12)] p-8 md:p-12">
               <TradeForm />
             </div>
           </div>

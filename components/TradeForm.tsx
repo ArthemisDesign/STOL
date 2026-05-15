@@ -25,7 +25,7 @@ const EMPTY: FormState = {
 };
 
 const inputCls =
-  "w-full bg-white border border-[#D4CFC9] px-4 py-3 font-body text-[13px] text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-text-primary transition-colors duration-150";
+  "w-full bg-[#1A1814] border border-[rgba(255,240,210,0.12)] px-4 py-3 font-body text-[13px] text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent transition-colors duration-150";
 
 export default function TradeForm() {
   const { T } = useLanguage();

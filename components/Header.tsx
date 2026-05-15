@@ -113,7 +113,7 @@ export default function Header() {
                 onClick={() => setGlobeOpen(v => !v)}
                 aria-label="Switch language"
                 className="flex items-center gap-1 transition-colors"
-                style={{ color: globeOpen ? "#1A1A1A" : "rgba(107,101,96,0.55)" }}
+                style={{ color: globeOpen ? "#EDE8E0" : "rgba(160,150,140,0.55)" }}
               >
                 <Globe size={13} strokeWidth={1.4} />
                 <span className="font-body" style={{ fontSize: "10px", letterSpacing: "0.06em" }}>
@@ -140,18 +140,18 @@ export default function Header() {
                         onClick={() => { setLocale(loc.value); setGlobeOpen(false); }}
                         className="flex items-center gap-2.5 px-4 py-2.5 transition-colors text-left"
                         style={{
-                          backgroundColor: locale === loc.value ? "rgba(166,141,116,0.12)" : "transparent",
+                          backgroundColor: locale === loc.value ? "rgba(196,168,130,0.15)" : "transparent",
                         }}
                       >
                         <span
                           className="font-body"
-                          style={{ fontSize: "10px", letterSpacing: "0.06em", color: "rgba(107,101,96,0.6)", minWidth: "22px" }}
+                          style={{ fontSize: "10px", letterSpacing: "0.06em", color: "rgba(160,150,140,0.6)", minWidth: "22px" }}
                         >
                           {loc.flag}
                         </span>
                         <span
                           className="font-body"
-                          style={{ fontSize: "12px", color: locale === loc.value ? "#1A1A1A" : "rgba(107,101,96,0.7)" }}
+                          style={{ fontSize: "12px", color: locale === loc.value ? "#EDE8E0" : "rgba(160,150,140,0.7)" }}
                         >
                           {loc.label}
                         </span>

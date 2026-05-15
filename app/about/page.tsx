@@ -99,7 +99,7 @@ export default function AboutPage() {
       </section>
 
       {/* 4. MATERIALS */}
-      <section className="bg-[#F5F0EB] border-t border-accent/20">
+      <section className="bg-[#0A0A0A] border-t border-accent/20">
         <div className="max-w-screen-xl mx-auto px-6 md:px-10 py-20 md:py-28">
           <p className="font-body text-[10px] uppercase tracking-[0.25em] text-accent text-center mb-3">
             {about.materialsLabel}
