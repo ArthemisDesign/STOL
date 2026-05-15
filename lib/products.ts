@@ -19,18 +19,32 @@ export interface Product {
   dimensions: Dimensions;
 }
 
-const CDN = "https://cdn.sanity.io/images/ld3h3xvm/production";
-
-const IMGS: Record<string, string> = {
-  "step":   `${CDN}/96d296fa01a5456731231b774582c8f2323a80b8-2962x2962.jpg`,
-  "gambit": `${CDN}/b9ea11458f644b148abae59e2a986e126c361c42-2962x2962.jpg`,
-  "mayak":  `${CDN}/08c5b2f0c55459cccfd20a364b4c2e31c490ef2e-2962x2962.jpg`,
-  "arhiv":  `${CDN}/ac638e016dc45c0843a5f4262ef2bad13da0ca3c-2960x2962.jpg`,
+const IMGS: Record<string, string[]> = {
+  "step":   [
+    "/products/step/image%20173487.png",
+    "/products/step/image%20173470.png",
+    "/products/step/image%20173486.png",
+    "/products/step/image%20173488.png",
+  ],
+  "gambit": [
+    "/products/gambit/image%20173493.png",
+    "/products/gambit/image%20173471.png",
+    "/products/gambit/image%20173492.png",
+    "/products/gambit/image%20173494.png",
+  ],
+  "mayak":  [
+    "/products/mayak/image%20173490.png",
+    "/products/mayak/image%20173472.png",
+    "/products/mayak/image%20173489.png",
+    "/products/mayak/image%20173491.png",
+  ],
+  "arhiv":  [
+    "/products/arhiv/image%20173495.png",
+    "/products/arhiv/image%20173473.png",
+    "/products/arhiv/image%20173496.png",
+    "/products/arhiv/image%20173497.png",
+  ],
 };
-
-function img(slug: string): string[] {
-  return [IMGS[slug] ?? IMGS["step"], IMGS[slug] ?? IMGS["step"]];
-}
 
 export const products: Product[] = [
   {
@@ -42,7 +56,7 @@ export const products: Product[] = [
     price: 45000,
     description:
       "Квадратный журнальный столик из массива дерева с вставкой из натуральной кожи. Тёплый, тактильный, честный — сделан руками и рассчитан на долгую жизнь. Хорошо стоит рядом с диваном и со временем только улучшается.",
-    images: img("step"),
+    images: IMGS["step"],
     materials: ["Массив дерева", "Натуральная кожа", "Металлическое основание"],
     dimensions: { width: "80 см", depth: "80 см", height: "40 см" },
   },
@@ -55,7 +69,7 @@ export const products: Product[] = [
     price: 52000,
     description:
       "Квадратный журнальный столик со встроенной шахматной доской под стеклом. Для долгих вечеров, неторопливых разговоров и партий, которые могут затянуться до полуночи. Работает и как обычный столик.",
-    images: img("gambit"),
+    images: IMGS["gambit"],
     materials: ["Массив дерева", "Закалённое стекло", "Шахматная инкрустация"],
     dimensions: { width: "70 см", depth: "70 см", height: "38 см" },
   },
@@ -68,7 +82,7 @@ export const products: Product[] = [
     price: 38000,
     description:
       "Низкий круглый столик из массива дерева. Мягкие линии, устойчивое основание, никакой лишней детали. Легко вписывается в любой интерьер и со временем становится его тихой, незаменимой частью.",
-    images: img("mayak"),
+    images: IMGS["mayak"],
     materials: ["Массив дерева", "Льняное масло"],
     dimensions: { width: "Ø 60 см", depth: "—", height: "40 см" },
   },
@@ -81,7 +95,7 @@ export const products: Product[] = [
     price: 65000,
     description:
       "Открытый книжный шкаф из массива дерева с чистыми пропорциями и прочными полками. Сделан для настоящих книг, пластинок, семейных вещей и ощущения дома, в котором всё на своём месте.",
-    images: img("arhiv"),
+    images: IMGS["arhiv"],
     materials: ["Массив дерева", "Металлические элементы"],
     dimensions: { width: "100 см", depth: "35 см", height: "180 см" },
   },

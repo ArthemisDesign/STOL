@@ -478,7 +478,7 @@ export default function HomeCanvas() {
                 }}
               >
                 {/* Inner clip — keeps the image inside the card boundary */}
-                <div style={{ width: "100%", height: "100%", overflow: "hidden", backgroundColor: "#1A1814" }}>
+                <div style={{ width: "100%", height: "100%", overflow: "hidden", backgroundColor: "#C8C4BE" }}>
                   <Link
                     href={`/products/${slug}`}
                     onClick={e => { if (didDrag.current) e.preventDefault(); }}
@@ -494,7 +494,7 @@ export default function HomeCanvas() {
                       style={{
                         width: "100%",
                         height: "100%",
-                        objectFit: "cover",
+                        objectFit: "contain",
                         display: "block",
                         pointerEvents: "none",
                         userSelect: "none",

@@ -125,17 +125,26 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="min-h-screen pt-14 bg-solid">
-      <Toolbar {...toolbarProps} />
-      <div className="px-6 md:px-10 py-8">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-10">
-          {filtered.map((product, i) => (
-            <ProductCard key={product.id} product={product} index={i} />
-          ))}
+    <div className="min-h-screen pt-14 bg-solid relative" style={{
+      backgroundImage: "url('/wood-texture.png')",
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundAttachment: "fixed",
+    }}>
+      {/* dark overlay so text stays readable */}
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: "rgba(10,8,6,0.82)", zIndex: 0 }} />
+      <div className="relative" style={{ zIndex: 1 }}>
+        <Toolbar {...toolbarProps} />
+        <div className="px-6 md:px-10 py-8">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-10">
+            {filtered.map((product, i) => (
+              <ProductCard key={product.id} product={product} index={i} />
+            ))}
+          </div>
+          {filtered.length === 0 && (
+            <p className="text-center py-24 font-body text-sm text-text-secondary">{T.products.noProducts}</p>
+          )}
         </div>
-        {filtered.length === 0 && (
-          <p className="text-center py-24 font-body text-sm text-text-secondary">{T.products.noProducts}</p>
-        )}
       </div>
     </div>
   );

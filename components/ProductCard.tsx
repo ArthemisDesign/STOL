@@ -23,8 +23,8 @@ export default function ProductCard({ product, index, feed = false }: ProductCar
         href={`/products/${product.slug}`}
         className="group flex items-center gap-6 py-5 hover:bg-[rgba(255,240,210,0.04)] transition-colors px-0"
       >
-        <div className="relative flex-shrink-0 overflow-hidden" style={{ width: 72, height: 72, backgroundColor: "#EDE8E3" }}>
-          <Image src={img1} alt={product.name} fill className="object-cover" sizes="72px" />
+        <div className="relative flex-shrink-0 overflow-hidden" style={{ width: 72, height: 72, backgroundColor: "#C8C4BE" }}>
+          <Image src={img1} alt={product.name} fill className="object-contain" sizes="72px" />
         </div>
         <div className="flex-1 min-w-0 flex items-baseline gap-3">
           <span className="font-body text-text-secondary/40 flex-shrink-0" style={{ fontSize: "10px", letterSpacing: "0.05em" }}>
@@ -52,14 +52,14 @@ export default function ProductCard({ product, index, feed = false }: ProductCar
       {/* Image */}
       <div
         className="relative w-full overflow-hidden"
-        style={{ aspectRatio: "3/4", backgroundColor: "#EDE8E3" }}
+        style={{ aspectRatio: "1/1", backgroundColor: "#C8C4BE" }}
       >
         <Image
           src={img1}
           alt={product.name}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-          className="object-cover transition-opacity duration-500"
+          className="object-contain transition-opacity duration-500"
           style={{ opacity: hovered && img2 !== img1 ? 0 : 1 }}
           priority={index < 5}
         />
@@ -69,7 +69,7 @@ export default function ProductCard({ product, index, feed = false }: ProductCar
             alt={`${product.name} — alternate`}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            className="object-cover transition-opacity duration-500"
+            className="object-contain transition-opacity duration-500"
             style={{ opacity: hovered ? 1 : 0 }}
           />
         )}
