@@ -10,8 +10,8 @@ type Filter = (typeof CATS)[number];
 
 /* ─── Zoom constants ──────────────────────────────────────────────────────── */
 const INIT_SCALE = 0.50;
-const MIN_SCALE  = 0.08;
-const MAX_SCALE  = 2.50;
+const MIN_SCALE  = 0.32;
+const MAX_SCALE  = 1.45;
 
 /*
  * ─── Tile layout ────────────────────────────────────────────────────────────
@@ -104,7 +104,10 @@ export default function HomeCanvas() {
   const [active,     setActive]    = useState<Filter>("All");
   const [mounted,    setMounted]   = useState(false);
   const [grabbing,   setGrabbing]  = useState(false);
-  const [zoomPct,    setZoomPct]   = useState(Math.round(INIT_SCALE * 100));
+  const toDisplayPct = (s: number) =>
+    Math.round(((s - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 100);
+
+  const [zoomPct,    setZoomPct]   = useState(toDisplayPct(INIT_SCALE));
   const [tiles,      setTiles]     = useState<TileRange>({ c1: -2, c2: 2, r1: -2, r2: 2 });
   /* Randomised on every mount – empty until useEffect fires */
   const [tileCards,  setTileCards] = useState<TileCard[]>([]);
@@ -171,7 +174,7 @@ export default function HomeCanvas() {
 
       if (Math.abs(zoomVel.current) < 0.0003) {
         syncTiles();
-        setZoomPct(Math.round(T.current.s * 100));
+        setZoomPct(toDisplayPct(T.current.s));
         zoomRaf.current = null;
         return;
       }
@@ -186,7 +189,7 @@ export default function HomeCanvas() {
       T.current.s = newS;
 
       commit();
-      setZoomPct(Math.round(newS * 100));
+      setZoomPct(toDisplayPct(newS));
 
       zoomRaf.current = requestAnimationFrame(animate);
     };
@@ -330,7 +333,7 @@ export default function HomeCanvas() {
       pinchMid.current  = mid;
 
       commit();
-      setZoomPct(Math.round(newS * 100));
+      setZoomPct(toDisplayPct(newS));
       didDrag.current = true;
       throttleSync();
 
