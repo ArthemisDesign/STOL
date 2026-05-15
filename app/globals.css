@@ -61,7 +61,7 @@ body {
   pointer-events: none;
   z-index: 1;
   background-image: url("/concrete.png");
-  background-size: 60%;
+  background-size: 30%;
   background-position: center;
   background-repeat: repeat;
   opacity: 0.18;
