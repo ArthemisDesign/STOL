@@ -30,7 +30,7 @@ export default function ProductCard({ product, index, feed = false }: ProductCar
           <span className="font-body text-text-secondary/40 flex-shrink-0" style={{ fontSize: "10px", letterSpacing: "0.05em" }}>
             {num}
           </span>
-          <span className="font-heading italic text-text-primary truncate" style={{ fontSize: "15px" }}>
+          <span className="font-heading text-text-primary truncate" style={{ fontSize: "15px" }}>
             {product.name}
           </span>
         </div>
@@ -97,7 +97,7 @@ export default function ProductCard({ product, index, feed = false }: ProductCar
           {num}
         </span>
         <span
-          className="font-heading italic font-light text-text-primary leading-snug truncate"
+          className="font-heading font-light text-text-primary leading-snug truncate"
           style={{ fontSize: "13px" }}
         >
           {product.name}

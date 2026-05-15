@@ -1,159 +1,140 @@
-"use client";
+﻿"use client";
 
 import { useState, useMemo } from "react";
-import { products, type Category } from "@/lib/products";
+import Image from "next/image";
+import Link from "next/link";
+import { products } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
+import { useLanguage } from "@/context/LanguageContext";
 
-const CATEGORIES: { label: string; value: Category | "all" }[] = [
-  { label: "All",   value: "all"   },
-  { label: "Sleep", value: "sleep" },
-  { label: "Live",  value: "live"  },
-  { label: "Eat",   value: "eat"   },
-  { label: "Work",  value: "work"  },
-];
-
+type FilterValue = "all" | "sofas" | "chairs" | "closets" | "beds" | "tables" | "accessories";
 type ViewMode = "grid" | "feed";
 
-export default function ProductsPage() {
-  const [category,  setCategory]  = useState<Category | "all">("all");
-  const [view,      setView]      = useState<ViewMode>("grid");
-  const [filterOpen, setFilterOpen] = useState(false);
-
-  const filtered = useMemo(
-    () => category === "all" ? products : products.filter(p => p.category === category),
-    [category]
-  );
-
-  const activeLabel = CATEGORIES.find(c => c.value === category)?.label ?? "All";
+function Toolbar({
+  filter, setFilter, view, setView, count, activeLabel,
+}: {
+  filter:      FilterValue;
+  setFilter:   (f: FilterValue) => void;
+  view:        ViewMode;
+  setView:     (v: ViewMode) => void;
+  count:       number;
+  activeLabel: string;
+}) {
+  const { T } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const sep = "rgba(166,141,116,0.18)";
 
   return (
-    <div className="min-h-screen pt-14 bg-solid" style={{ color: "#1A1A1A" }}>
+    <>
+      <div className="px-6 md:px-10 flex items-center justify-between" style={{ height: "44px", borderBottom: `1px solid ${sep}` }}>
+        <button
+          onClick={() => setOpen(v => !v)}
+          className="flex items-center gap-1 font-body transition-colors"
+          style={{ fontSize: "11px", letterSpacing: "0.06em", color: open ? "#1A1A1A" : "rgba(107,101,96,0.7)" }}
+        >
+          <span style={{ textDecoration: open ? "underline" : "none" }}>{T.products.filter}</span>
+          <span style={{ fontSize: "13px", lineHeight: 1 }}>{open ? "−" : "+"}</span>
+        </button>
 
-      {/* ── Toolbar ── */}
-      <div
-        className="px-6 md:px-10 flex items-center justify-between"
-        style={{
-          height: "44px",
-          borderBottom: "1px solid rgba(166,141,116,0.18)",
-          backgroundColor: "var(--background)",
-        }}
-      >
-        {/* Left: Filter */}
-        <div className="relative">
-          <button
-            onClick={() => setFilterOpen(v => !v)}
-            className="flex items-center gap-1.5 font-body text-text-secondary hover:text-text-primary transition-colors"
-            style={{ fontSize: "11px", letterSpacing: "0.06em" }}
-          >
-            <span>Filter</span>
-            <span style={{ fontSize: "14px", lineHeight: 1 }}>+</span>
-          </button>
+        <div className="flex items-center gap-3">
+          {["(w.)", "(fr.)"].map(s => (
+            <span key={s} className="font-body text-text-secondary/35 select-none" style={{ fontSize: "11px" }}>{s}</span>
+          ))}
+        </div>
 
-          {/* Filter dropdown */}
-          {filterOpen && (
-            <div
-              className="absolute top-full left-0 mt-2 flex flex-col gap-0.5 liquid-glass z-50"
-              style={{ borderRadius: "10px", padding: "6px", minWidth: "120px" }}
-            >
-              {CATEGORIES.map(({ label, value }) => (
+        <div className="flex items-center font-body" style={{ fontSize: "11px", letterSpacing: "0.06em" }}>
+          <button onClick={() => setView("feed")} className="transition-colors" style={{ color: view === "feed" ? "#1A1A1A" : "rgba(107,101,96,0.4)" }}>{T.products.feed}</button>
+          <span className="mx-2" style={{ color: "rgba(107,101,96,0.25)" }}>|</span>
+          <button onClick={() => setView("grid")} className="transition-colors" style={{ color: view === "grid" ? "#1A1A1A" : "rgba(107,101,96,0.4)" }}>{T.products.grid}</button>
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateRows: open ? "1fr" : "0fr", transition: "grid-template-rows 0.32s cubic-bezier(0.16,1,0.3,1)", borderBottom: open ? `1px solid ${sep}` : "none" }}>
+        <div style={{ overflow: "hidden" }}>
+          <div className="px-6 md:px-10 flex items-center gap-6" style={{ height: "40px" }}>
+            {T.products.filters.map(({ label, value }) => {
+              const active = filter === value;
+              return (
                 <button
                   key={value}
-                  onClick={() => { setCategory(value); setFilterOpen(false); }}
-                  className="text-left px-3 py-2 rounded-md font-heading italic transition-colors"
-                  style={{
-                    fontSize: "14px",
-                    color: category === value ? "#1A1A1A" : "rgba(107,101,96,0.7)",
-                    backgroundColor: category === value ? "rgba(166,141,116,0.12)" : "transparent",
-                  }}
+                  onClick={() => { setFilter(value as FilterValue); setOpen(false); }}
+                  className="font-heading transition-all duration-200"
+                  style={{ fontSize: active ? "14px" : "13px", color: active ? "#1A1A1A" : "rgba(107,101,96,0.45)", whiteSpace: "nowrap" }}
                 >
                   {label}
                 </button>
-              ))}
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="px-6 md:px-10 flex items-center justify-between" style={{ height: "36px", borderBottom: "1px solid rgba(166,141,116,0.10)" }}>
+        <span className="font-body text-text-secondary/40" style={{ fontSize: "11px" }}>
+          ({String(count).padStart(2, "0")})
+        </span>
+        <span className="font-heading text-text-secondary/60" style={{ fontSize: "12px" }}>
+          {activeLabel}
+        </span>
+      </div>
+    </>
+  );
+}
+
+export default function ProductsPage() {
+  const { T } = useLanguage();
+  const [filter, setFilter] = useState<FilterValue>("all");
+  const [view,   setView]   = useState<ViewMode>("grid");
+
+  const filtered = useMemo(() => {
+    if (filter === "all") return products;
+    const subs = T.products.subcategories[filter] ?? [];
+    return products.filter(p => subs.includes(p.subcategory));
+  }, [filter, T]);
+
+  const activeLabel  = T.products.filters.find(f => f.value === filter)?.label ?? T.products.filters[0].label;
+  const toolbarProps = { filter, setFilter, view, setView, count: filtered.length, activeLabel };
+
+  if (view === "feed") {
+    return (
+      <div className="fixed inset-x-0 z-20 flex flex-col" style={{ top: "48px", bottom: 0, backgroundColor: "var(--background)" }}>
+        <div className="flex-shrink-0"><Toolbar {...toolbarProps} /></div>
+        <div className="flex-1 overflow-y-scroll" style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain" }}>
+          {filtered.map((product, i) => (
+            <div key={product.id} className="relative flex items-center justify-center" style={{ height: "100%", scrollSnapAlign: "start", scrollSnapStop: "always", backgroundColor: "var(--background)" }}>
+              <Link href={`/products/${product.slug}`} className="relative block" style={{ height: "70%", aspectRatio: "3/4" }}>
+                <Image src={product.images[0]} alt={product.name} fill className="object-cover" sizes="(max-width: 768px) 75vw, 45vw" priority={i === 0} />
+              </Link>
+              <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between px-6 md:px-10" style={{ paddingBottom: "22px" }}>
+                <div className="flex items-baseline gap-2">
+                  <span className="font-body text-text-secondary/40" style={{ fontSize: "10px", letterSpacing: "0.04em" }}>({String(i + 1).padStart(2, "0")})</span>
+                  <span className="font-heading font-light text-text-primary" style={{ fontSize: "14px" }}>{product.name}</span>
+                </div>
+                <span className="font-body text-text-secondary/35" style={{ fontSize: "10px", letterSpacing: "0.12em" }}>{T.products.scroll}</span>
+              </div>
+            </div>
+          ))}
+          {filtered.length === 0 && (
+            <div className="flex items-center justify-center h-full">
+              <p className="font-body text-sm text-text-secondary">{T.products.noProducts}</p>
             </div>
           )}
         </div>
-
-        {/* Center: sort abbreviations */}
-        <div className="flex items-center gap-3">
-          <button
-            className="font-body text-text-secondary/50 hover:text-text-secondary transition-colors"
-            style={{ fontSize: "11px", letterSpacing: "0.04em" }}
-          >
-            (w.)
-          </button>
-          <button
-            className="font-body text-text-secondary/50 hover:text-text-secondary transition-colors"
-            style={{ fontSize: "11px", letterSpacing: "0.04em" }}
-          >
-            (fr.)
-          </button>
-        </div>
-
-        {/* Right: Feed | Grid */}
-        <div
-          className="flex items-center font-body"
-          style={{ fontSize: "11px", letterSpacing: "0.06em" }}
-        >
-          <button
-            onClick={() => setView("feed")}
-            className="transition-colors"
-            style={{ color: view === "feed" ? "#1A1A1A" : "rgba(107,101,96,0.45)" }}
-          >
-            Feed
-          </button>
-          <span className="mx-2" style={{ color: "rgba(107,101,96,0.3)" }}>|</span>
-          <button
-            onClick={() => setView("grid")}
-            className="transition-colors"
-            style={{ color: view === "grid" ? "#1A1A1A" : "rgba(107,101,96,0.45)" }}
-          >
-            Grid
-          </button>
-        </div>
       </div>
+    );
+  }
 
-      {/* ── Count row ── */}
-      <div
-        className="px-6 md:px-10 flex items-center justify-between"
-        style={{
-          height: "40px",
-          borderBottom: "1px solid rgba(166,141,116,0.12)",
-        }}
-      >
-        <span
-          className="font-body text-text-secondary/50"
-          style={{ fontSize: "11px", letterSpacing: "0.04em" }}
-        >
-          ({String(filtered.length).padStart(2, "0")})
-        </span>
-        <span
-          className="font-heading italic text-text-secondary"
-          style={{ fontSize: "12px" }}
-        >
-          {activeLabel} Products
-        </span>
-      </div>
-
-      {/* ── Product grid / feed ── */}
+  return (
+    <div className="min-h-screen pt-14 bg-solid">
+      <Toolbar {...toolbarProps} />
       <div className="px-6 md:px-10 py-8">
-        {view === "grid" ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-10">
-            {filtered.map((product, i) => (
-              <ProductCard key={product.id} product={product} index={i} />
-            ))}
-          </div>
-        ) : (
-          <div className="flex flex-col gap-0 divide-y" style={{ borderColor: "rgba(166,141,116,0.14)" }}>
-            {filtered.map((product, i) => (
-              <ProductCard key={product.id} product={product} index={i} feed />
-            ))}
-          </div>
-        )}
-
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-10">
+          {filtered.map((product, i) => (
+            <ProductCard key={product.id} product={product} index={i} />
+          ))}
+        </div>
         {filtered.length === 0 && (
-          <p className="text-center py-24 font-body text-sm text-text-secondary">
-            No products in this category.
-          </p>
+          <p className="text-center py-24 font-body text-sm text-text-secondary">{T.products.noProducts}</p>
         )}
       </div>
     </div>

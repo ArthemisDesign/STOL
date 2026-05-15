@@ -12,10 +12,6 @@
 body {
   color: var(--foreground);
   background-color: var(--background);
-  background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-  background-size: var(--grid-size) var(--grid-size);
 }
 
 @layer utilities {
@@ -26,6 +22,14 @@ body {
   .bg-solid {
     background-color: var(--background);
     background-image: none;
+  }
+  /* Subtle grid for the home canvas background */
+  .bg-grid {
+    background-color: var(--background);
+    background-image:
+      linear-gradient(var(--grid-line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    background-size: var(--grid-size) var(--grid-size);
   }
 }
 

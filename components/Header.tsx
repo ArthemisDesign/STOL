@@ -3,28 +3,16 @@
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-
-const NAV_LINKS = [
-  { label: "Home",     href: "/" },
-  { label: "Products", href: "/products" },
-  { label: "About",    href: "/about" },
-  { label: "Trade",    href: "/trade" },
-];
-
-function getPageLabel(pathname: string): string {
-  if (pathname === "/") return "Home";
-  const match = NAV_LINKS.find(
-    (n) => n.href !== "/" && pathname.startsWith(n.href)
-  );
-  return match?.label ?? "Lusano";
-}
+import { Globe } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
+import { LOCALES } from "@/lib/i18n";
 
 function useLATime(): string {
   const [display, setDisplay] = useState("");
   useEffect(() => {
     const update = () => {
       const parts = new Intl.DateTimeFormat("en-US", {
-        timeZone: "America/Los_Angeles",
+        timeZone: "Europe/Moscow",
         hour:   "2-digit",
         minute: "2-digit",
         hour12: false,
@@ -41,23 +29,46 @@ function useLATime(): string {
 }
 
 export default function Header() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef     = useRef<HTMLDivElement>(null);
-  const pathname    = usePathname();
-  const laTime      = useLATime();
-  const currentPage = getPageLabel(pathname);
+  const { T, locale, setLocale } = useLanguage();
+  const [menuOpen,  setMenuOpen]  = useState(false);
+  const [globeOpen, setGlobeOpen] = useState(false);
+  const menuRef  = useRef<HTMLDivElement>(null);
+  const globeRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const laTime   = useLATime();
 
-  /* Close when clicking outside */
+  const NAV_LINKS = [
+    { label: T.nav.home,     href: "/" },
+    { label: T.nav.products, href: "/products" },
+    { label: T.nav.about,    href: "/about" },
+    { label: T.nav.trade,    href: "/trade" },
+  ];
+
+  const currentPage = (() => {
+    if (pathname === "/") return T.nav.home;
+    const match = NAV_LINKS.find(n => n.href !== "/" && pathname.startsWith(n.href));
+    return match?.label ?? "Mikhaylov Carpenter";
+  })();
+
+  /* Close menu on outside click */
   useEffect(() => {
     if (!menuOpen) return;
-    const handler = (e: PointerEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
+    const h = (e: PointerEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     };
-    document.addEventListener("pointerdown", handler);
-    return () => document.removeEventListener("pointerdown", handler);
+    document.addEventListener("pointerdown", h);
+    return () => document.removeEventListener("pointerdown", h);
   }, [menuOpen]);
+
+  /* Close globe on outside click */
+  useEffect(() => {
+    if (!globeOpen) return;
+    const h = (e: PointerEvent) => {
+      if (globeRef.current && !globeRef.current.contains(e.target as Node)) setGlobeOpen(false);
+    };
+    document.addEventListener("pointerdown", h);
+    return () => document.removeEventListener("pointerdown", h);
+  }, [globeOpen]);
 
   const ease = "cubic-bezier(0.16,1,0.3,1)";
   const dur  = "0.38s";
@@ -73,13 +84,14 @@ export default function Header() {
 
           <Link
             href="/"
-            className="pointer-events-auto font-heading font-light tracking-[0.07em] text-text-primary hover:text-accent transition-colors duration-200"
+            className="pointer-events-auto font-heading font-bold tracking-[0.07em] text-text-primary hover:text-accent transition-colors duration-200 leading-tight"
             style={{ fontSize: "14px" }}
           >
-            lusano
+            MIKHAYLOV<br />CARPENTER
           </Link>
 
-          <div className="flex items-center gap-2 min-w-0">
+          {/* Right: time + city + globe */}
+          <div className="flex items-center gap-3">
             {laTime && (
               <span
                 className="font-body tabular-nums text-text-secondary/55 hidden sm:block"
@@ -92,8 +104,63 @@ export default function Header() {
               className="font-body text-text-secondary/45 hidden sm:block"
               style={{ fontSize: "10px", letterSpacing: "0.06em" }}
             >
-              Los Angeles
+              {T.location}
             </span>
+
+            {/* Globe language switcher */}
+            <div ref={globeRef} className="relative pointer-events-auto">
+              <button
+                onClick={() => setGlobeOpen(v => !v)}
+                aria-label="Switch language"
+                className="flex items-center gap-1 transition-colors"
+                style={{ color: globeOpen ? "#1A1A1A" : "rgba(107,101,96,0.55)" }}
+              >
+                <Globe size={13} strokeWidth={1.4} />
+                <span className="font-body" style={{ fontSize: "10px", letterSpacing: "0.06em" }}>
+                  {locale.toUpperCase()}
+                </span>
+              </button>
+
+              {/* Language dropdown */}
+              <div
+                className="absolute right-0 top-full mt-2 liquid-glass flex flex-col overflow-hidden"
+                style={{
+                  borderRadius: "10px",
+                  minWidth: "110px",
+                  display:         "grid",
+                  gridTemplateRows: globeOpen ? "1fr" : "0fr",
+                  transition:      `grid-template-rows ${dur} ${ease}`,
+                }}
+              >
+                <div style={{ overflow: "hidden" }}>
+                  <div className="flex flex-col py-1">
+                    {LOCALES.map(loc => (
+                      <button
+                        key={loc.value}
+                        onClick={() => { setLocale(loc.value); setGlobeOpen(false); }}
+                        className="flex items-center gap-2.5 px-4 py-2.5 transition-colors text-left"
+                        style={{
+                          backgroundColor: locale === loc.value ? "rgba(166,141,116,0.12)" : "transparent",
+                        }}
+                      >
+                        <span
+                          className="font-body"
+                          style={{ fontSize: "10px", letterSpacing: "0.06em", color: "rgba(107,101,96,0.6)", minWidth: "22px" }}
+                        >
+                          {loc.flag}
+                        </span>
+                        <span
+                          className="font-body"
+                          style={{ fontSize: "12px", color: locale === loc.value ? "#1A1A1A" : "rgba(107,101,96,0.7)" }}
+                        >
+                          {loc.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </header>
@@ -113,10 +180,8 @@ export default function Header() {
             transition:   `width ${dur} ${ease}, border-radius ${dur} ${ease}`,
           }}
         >
-          {/* ── Top row — always visible ── */}
+          {/* Top row */}
           <div className="relative flex items-center h-9 px-4">
-
-            {/* Left: hamburger ↔ × */}
             <button
               onClick={() => setMenuOpen(v => !v)}
               aria-label={menuOpen ? "Close menu" : "Open menu"}
@@ -134,35 +199,22 @@ export default function Header() {
               )}
             </button>
 
-            {/* Center: page label */}
             <span
-              className="font-heading italic text-text-secondary pointer-events-none"
-              style={{
-                fontSize:   "13px",
-                position:   "absolute",
-                left:       "50%",
-                transform:  "translateX(-50%)",
-                whiteSpace: "nowrap",
-              }}
+              className="font-heading text-text-secondary pointer-events-none"
+              style={{ fontSize: "13px", position: "absolute", left: "50%", transform: "translateX(-50%)", whiteSpace: "nowrap" }}
             >
               {currentPage}
             </span>
 
-            {/* Right: + */}
             <span
               className="ml-auto text-text-secondary/45 select-none"
-              style={{
-                fontSize:   "16px",
-                lineHeight: 1,
-                opacity:    menuOpen ? 1 : 0,
-                transition: `opacity 0.2s ease`,
-              }}
+              style={{ fontSize: "16px", lineHeight: 1, opacity: menuOpen ? 1 : 0, transition: "opacity 0.2s ease" }}
             >
               +
             </span>
           </div>
 
-          {/* ── Collapsible body — grid-template-rows trick ── */}
+          {/* Collapsible nav */}
           <div
             style={{
               display:          "grid",
@@ -170,13 +222,7 @@ export default function Header() {
               transition:       `grid-template-rows ${dur} ${ease}`,
             }}
           >
-            <div
-              style={{
-                overflow:   "hidden",
-                opacity:    menuOpen ? 1 : 0,
-                transition: `opacity 0.2s ease ${menuOpen ? "0.12s" : "0s"}`,
-              }}
-            >
+            <div style={{ overflow: "hidden", opacity: menuOpen ? 1 : 0, transition: `opacity 0.22s ease ${menuOpen ? "0.12s" : "0s"}` }}>
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.35)" }} />
 
               <nav className="flex flex-col px-4">
@@ -188,43 +234,20 @@ export default function Header() {
                     className="group flex items-baseline gap-4 py-3.5 border-b"
                     style={{ borderColor: "rgba(255,255,255,0.30)" }}
                   >
-                    <span
-                      className="font-body text-text-secondary/40 flex-shrink-0"
-                      style={{ fontSize: "10px", letterSpacing: "0.05em", width: "28px" }}
-                    >
+                    <span className="font-body text-text-secondary/40 flex-shrink-0" style={{ fontSize: "10px", letterSpacing: "0.05em", width: "28px" }}>
                       ({String(i + 1).padStart(2, "0")})
                     </span>
-                    <span
-                      className="font-heading italic font-light text-text-primary leading-none transition-all duration-200 group-hover:translate-x-1 group-hover:text-accent"
-                      style={{ fontSize: "18px" }}
-                    >
+                    <span className="font-heading font-light text-text-primary leading-none transition-all duration-200 group-hover:translate-x-1 group-hover:text-accent" style={{ fontSize: "18px" }}>
                       {label}
                     </span>
                   </Link>
                 ))}
               </nav>
 
-              <div
-                className="px-4 py-4 flex items-center justify-between"
-                style={{ borderTop: "1px solid rgba(255,255,255,0.30)" }}
-              >
-                <a
-                  href="mailto:hello@lusano.com"
-                  className="font-body tracking-[0.14em] text-text-secondary hover:text-text-primary transition-colors"
-                  style={{ fontSize: "11px" }}
-                >
-                  em.
-                </a>
+              <div className="px-4 py-4 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.30)" }}>
+                <a href="mailto:hello@mikhaylovcarpenter.com" className="font-body tracking-[0.14em] text-text-secondary hover:text-text-primary transition-colors" style={{ fontSize: "11px" }}>em.</a>
                 <span className="font-heading text-text-secondary/30" style={{ fontSize: "14px" }}>✳</span>
-                <a
-                  href="https://instagram.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="font-body tracking-[0.14em] text-text-secondary hover:text-text-primary transition-colors"
-                  style={{ fontSize: "11px" }}
-                >
-                  ig.
-                </a>
+                <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="font-body tracking-[0.14em] text-text-secondary hover:text-text-primary transition-colors" style={{ fontSize: "11px" }}>ig.</a>
               </div>
             </div>
           </div>

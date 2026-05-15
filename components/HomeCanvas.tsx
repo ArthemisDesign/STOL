@@ -2,11 +2,8 @@
 
 import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import { products, type Category } from "@/lib/products";
-
-/* ─── Filter config ───────────────────────────────────────────────────────── */
-const CATS = ["All", "Sleep", "Live", "Eat", "Work"] as const;
-type Filter = (typeof CATS)[number];
+import { products } from "@/lib/products";
+import { useLanguage } from "@/context/LanguageContext";
 
 /* ─── Zoom constants ──────────────────────────────────────────────────────── */
 const INIT_SCALE = 0.50;
@@ -101,7 +98,12 @@ function calcTiles(tx: number, ty: number, s: number): TileRange {
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
 export default function HomeCanvas() {
-  const [active,     setActive]    = useState<Filter>("All");
+  const { T: tl } = useLanguage();
+  const CATS = tl.canvas.filters;
+  const [active, setActive] = useState<string>(CATS[0]);
+
+  /* Reset to "All" equivalent whenever language changes */
+  useEffect(() => { setActive(CATS[0]); }, [CATS]);
   const [mounted,    setMounted]   = useState(false);
   const [grabbing,   setGrabbing]  = useState(false);
   const toDisplayPct = (s: number) =>
@@ -434,7 +436,7 @@ export default function HomeCanvas() {
       {/* ── Canvas viewport ── */}
       <div
         ref={containerRef}
-        className={`fixed inset-0 z-0 overflow-hidden transition-opacity duration-500 ${
+        className={`fixed inset-0 z-0 overflow-hidden bg-grid transition-opacity duration-500 ${
           mounted ? "opacity-100" : "opacity-0"
         }`}
         style={{ cursor: grabbing ? "grabbing" : "crosshair", touchAction: "none" }}
@@ -455,7 +457,8 @@ export default function HomeCanvas() {
           }}
         >
           {cardInstances.map(({ key, x, y, w, img, slug, name, category }) => {
-            const visible = active === "All" || category === (active.toLowerCase() as Category);
+            const catValue = tl.canvas.catMap[active] ?? active.toLowerCase();
+            const visible  = catValue === "all" || category === catValue;
             return (
               <div
                 key={key}
@@ -500,7 +503,7 @@ export default function HomeCanvas() {
                 {/* Product name — fades in on hover */}
                 <div className="canvas-card-name">
                   <span
-                    className="font-heading italic text-text-primary"
+                    className="font-heading text-text-primary"
                     style={{ fontSize: "12px", letterSpacing: "0.02em", lineHeight: 1.3 }}
                   >
                     {name}
@@ -550,7 +553,7 @@ export default function HomeCanvas() {
                   )}
                   <button
                     onClick={() => setActive(cat)}
-                    className={`font-heading italic leading-none transition-all duration-200 ${
+                    className={`font-heading leading-none transition-all duration-200 ${
                       isActive
                         ? "text-text-primary"
                         : "text-text-secondary/45 hover:text-text-secondary"

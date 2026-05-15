@@ -16,8 +16,8 @@ const config: Config = {
         white: "#FFFFFF",
       },
       fontFamily: {
-        heading: ["var(--font-cormorant)", "Georgia", "serif"],
-        body: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
+        heading: ["var(--font-tt-chocolates)", "sans-serif"],
+        body:    ["var(--font-tt-chocolates)", "sans-serif"],
       },
       keyframes: {
         scrollUp: {
