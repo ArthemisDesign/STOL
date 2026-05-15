@@ -220,125 +220,173 @@ export default function HomeCanvas() {
     return () => el.removeEventListener("wheel", onWheel);
   }, [startZoomInertia]);
 
-  /* ── Pointer drag + inertia ── */
+  /* ── Pan + pinch-to-zoom (pointer events, works on desktop & mobile) ── */
+
+  /*
+   * activePointers tracks every finger / mouse button currently down.
+   * 1 pointer  → pan
+   * 2 pointers → pinch-zoom + simultaneous pan
+   */
+  const activePointers = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const pinchDist      = useRef(0);   // distance between two fingers last frame
+  const pinchMid       = useRef({ x: 0, y: 0 }); // midpoint last frame
+
   const dragging    = useRef(false);
   const lastPtr     = useRef({ x: 0, y: 0 });
   const moveDist    = useRef(0);
   const didDrag     = useRef(false);
   const tileTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  /*
-   * Velocity in px/ms, computed from recent pointer history.
-   * History keeps only events within the last 80 ms so a slow drag
-   * followed by a fast flick correctly reports the flick speed.
-   */
   const vel         = useRef({ x: 0, y: 0 });
   const ptrHistory  = useRef<Array<{ x: number; y: number; t: number }>>([]);
   const rafId       = useRef<number | null>(null);
 
-  /* Friction per animation frame (≈16 ms).  0.93 ≈ 0.8 s coast. */
   const FRICTION = 0.93;
 
   const stopInertia = useCallback(() => {
-    if (rafId.current !== null) {
-      cancelAnimationFrame(rafId.current);
-      rafId.current = null;
-    }
+    if (rafId.current !== null) { cancelAnimationFrame(rafId.current); rafId.current = null; }
   }, []);
 
   const startInertia = useCallback(() => {
     stopInertia();
-
     const animate = () => {
       vel.current.x *= FRICTION;
       vel.current.y *= FRICTION;
-
       const speed = Math.sqrt(vel.current.x ** 2 + vel.current.y ** 2);
-      if (speed < 0.04) {          // below ~2.4 px/frame → stop
-        syncTiles();
-        rafId.current = null;
-        return;
-      }
-
-      /* ~16 ms per frame: multiply px/ms → px/frame */
+      if (speed < 0.04) { syncTiles(); rafId.current = null; return; }
       T.current.x += vel.current.x * 16;
       T.current.y += vel.current.y * 16;
       commit();
-
-      /* Tile sync throttled during coast */
       if (!tileTimer.current) {
-        tileTimer.current = setTimeout(() => {
-          syncTiles();
-          tileTimer.current = null;
-        }, 120);
+        tileTimer.current = setTimeout(() => { syncTiles(); tileTimer.current = null; }, 120);
       }
-
       rafId.current = requestAnimationFrame(animate);
     };
-
     rafId.current = requestAnimationFrame(animate);
   }, [commit, stopInertia, syncTiles]);
 
-  /* Cancel inertia RAF on unmount */
   useEffect(() => stopInertia, [stopInertia]);
 
-  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (e.button !== 0) return;
-    stopInertia();                              // kill any ongoing coast
-    dragging.current      = true;
-    lastPtr.current       = { x: e.clientX, y: e.clientY };
-    moveDist.current      = 0;
-    didDrag.current       = false;
-    vel.current           = { x: 0, y: 0 };
-    ptrHistory.current    = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
-    e.currentTarget.setPointerCapture(e.pointerId);
-    setGrabbing(true);
-  };
+  /* ── helpers ── */
+  function getPinchInfo(pts: Map<number, { x: number; y: number }>) {
+    const [a, b] = Array.from(pts.values());
+    return {
+      dist: Math.hypot(b.x - a.x, b.y - a.y),
+      mid:  { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+    };
+  }
 
-  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragging.current) return;
-    const dx = e.clientX - lastPtr.current.x;
-    const dy = e.clientY - lastPtr.current.y;
-    lastPtr.current    = { x: e.clientX, y: e.clientY };
-    moveDist.current  += Math.abs(dx) + Math.abs(dy);
-    if (moveDist.current > 4) didDrag.current = true;
-
-    T.current.x += dx;
-    T.current.y += dy;
-    commit();
-
-    /* Append to history, discard samples older than 80 ms */
-    const now = performance.now();
-    ptrHistory.current.push({ x: e.clientX, y: e.clientY, t: now });
-    ptrHistory.current = ptrHistory.current.filter(p => now - p.t <= 80);
-
-    /* Throttled tile sync */
+  const throttleSync = () => {
     if (!tileTimer.current) {
-      tileTimer.current = setTimeout(() => {
-        syncTiles();
-        tileTimer.current = null;
-      }, 120);
+      tileTimer.current = setTimeout(() => { syncTiles(); tileTimer.current = null; }, 120);
     }
   };
 
-  const onPointerUp = () => {
-    dragging.current = false;
-    setGrabbing(false);
+  /* ── Pointer down ── */
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    e.currentTarget.setPointerCapture(e.pointerId);
+    activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    stopInertia();
+    didDrag.current = false;
+
+    if (activePointers.current.size === 1) {
+      /* Single finger / mouse – start pan */
+      dragging.current   = true;
+      lastPtr.current    = { x: e.clientX, y: e.clientY };
+      moveDist.current   = 0;
+      vel.current        = { x: 0, y: 0 };
+      ptrHistory.current = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
+      setGrabbing(true);
+    } else if (activePointers.current.size === 2) {
+      /* Second finger arrived – switch to pinch mode */
+      dragging.current = false;
+      const { dist, mid } = getPinchInfo(activePointers.current);
+      pinchDist.current = dist;
+      pinchMid.current  = mid;
+    }
+  };
+
+  /* ── Pointer move ── */
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!activePointers.current.has(e.pointerId)) return;
+    activePointers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (activePointers.current.size === 2) {
+      /* ── Pinch: zoom towards midpoint + pan with midpoint movement ── */
+      const { dist, mid } = getPinchInfo(activePointers.current);
+
+      const scaleFactor = dist / (pinchDist.current || dist);
+      const newS = Math.max(MIN_SCALE, Math.min(MAX_SCALE, T.current.s * scaleFactor));
+      const ratio = newS / T.current.s;
+
+      /* Pan from midpoint delta + zoom towards midpoint */
+      const dx = mid.x - pinchMid.current.x;
+      const dy = mid.y - pinchMid.current.y;
+      T.current.x = mid.x - (mid.x - T.current.x) * ratio + dx;
+      T.current.y = mid.y - (mid.y - T.current.y) * ratio + dy;
+      T.current.s = newS;
+
+      pinchDist.current = dist;
+      pinchMid.current  = mid;
+
+      commit();
+      setZoomPct(Math.round(newS * 100));
+      didDrag.current = true;
+      throttleSync();
+
+    } else if (activePointers.current.size === 1 && dragging.current) {
+      /* ── Single-finger pan ── */
+      const dx = e.clientX - lastPtr.current.x;
+      const dy = e.clientY - lastPtr.current.y;
+      lastPtr.current   = { x: e.clientX, y: e.clientY };
+      moveDist.current += Math.abs(dx) + Math.abs(dy);
+      if (moveDist.current > 4) didDrag.current = true;
+
+      T.current.x += dx;
+      T.current.y += dy;
+      commit();
+
+      const now = performance.now();
+      ptrHistory.current.push({ x: e.clientX, y: e.clientY, t: now });
+      ptrHistory.current = ptrHistory.current.filter(p => now - p.t <= 80);
+      throttleSync();
+    }
+  };
+
+  /* ── Pointer up / cancel ── */
+  const onPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    activePointers.current.delete(e.pointerId);
     if (tileTimer.current) { clearTimeout(tileTimer.current); tileTimer.current = null; }
 
-    /* Compute release velocity from the recent history window */
-    const h = ptrHistory.current;
-    if (h.length >= 2) {
-      const oldest = h[0];
-      const newest = h[h.length - 1];
-      const dt = newest.t - oldest.t;
-      if (dt > 0) {
-        vel.current.x = (newest.x - oldest.x) / dt;
-        vel.current.y = (newest.y - oldest.y) / dt;
+    if (activePointers.current.size === 0) {
+      /* All fingers lifted */
+      dragging.current = false;
+      setGrabbing(false);
+
+      /* Launch pan inertia from velocity history */
+      const h = ptrHistory.current;
+      if (h.length >= 2) {
+        const oldest = h[0];
+        const newest = h[h.length - 1];
+        const dt = newest.t - oldest.t;
+        if (dt > 0) {
+          vel.current.x = (newest.x - oldest.x) / dt;
+          vel.current.y = (newest.y - oldest.y) / dt;
+        }
       }
+      startInertia();
+
+    } else if (activePointers.current.size === 1) {
+      /* One finger still down – switch back to pan */
+      const [remaining] = Array.from(activePointers.current.values());
+      dragging.current   = true;
+      lastPtr.current    = { x: remaining.x, y: remaining.y };
+      moveDist.current   = 0;
+      vel.current        = { x: 0, y: 0 };
+      ptrHistory.current = [{ x: remaining.x, y: remaining.y, t: performance.now() }];
     }
 
-    startInertia();
+    syncTiles();
   };
 
   /* ── Card instances for all visible tiles ── */
@@ -386,7 +434,7 @@ export default function HomeCanvas() {
         className={`fixed inset-0 z-0 overflow-hidden transition-opacity duration-500 ${
           mounted ? "opacity-100" : "opacity-0"
         }`}
-        style={{ cursor: grabbing ? "grabbing" : "crosshair" }}
+        style={{ cursor: grabbing ? "grabbing" : "crosshair", touchAction: "none" }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
