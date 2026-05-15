@@ -1,167 +1,499 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { motion, useMotionValue } from "framer-motion";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { products, type Category } from "@/lib/products";
 
 /* ─── Filter config ───────────────────────────────────────────────────────── */
 const CATS = ["All", "Sleep", "Live", "Eat", "Work"] as const;
 type Filter = (typeof CATS)[number];
 
-/* ─── Canvas layout ───────────────────────────────────────────────────────── */
-const CANVAS = 4200;          // canvas px (square)
-const C      = CANVAS / 2;   // center = 2100
+/* ─── Zoom constants ──────────────────────────────────────────────────────── */
+const INIT_SCALE = 0.50;
+const MIN_SCALE  = 0.08;
+const MAX_SCALE  = 2.50;
+
+/*
+ * ─── Tile layout ────────────────────────────────────────────────────────────
+ *
+ * The 15 products are placed inside one TILE_W × TILE_H "tile".
+ * That tile repeats infinitely in all four directions.
+ *
+ * Positions are randomised on every page load (client-side only).
+ * BASE_CARDS holds only the card sizes; x/y are generated at mount.
+ */
+const TILE_W = 3400;
+const TILE_H = 2700;
+
+const BASE_CARDS: Array<{ id: number; w: number }> = [
+  { id: 1,  w: 310 }, { id: 2,  w: 330 }, { id: 3,  w: 270 },
+  { id: 4,  w: 300 }, { id: 5,  w: 285 }, { id: 6,  w: 280 },
+  { id: 7,  w: 285 }, { id: 8,  w: 265 }, { id: 9,  w: 265 },
+  { id: 10, w: 305 }, { id: 11, w: 285 }, { id: 12, w: 305 },
+  { id: 13, w: 280 }, { id: 14, w: 265 }, { id: 15, w: 305 },
+];
+
+type TileCard = { id: number; x: number; y: number; w: number };
 
 /**
- * Product card positions and sizes within the 4200×4200 canvas.
- * Cluster 3-4 around the center (visible on load) then scatter the rest.
+ * Scatter 15 cards randomly inside the tile, avoiding overlaps.
+ * Called once per page load (inside useEffect, client-side only).
  */
-const CARDS: Record<number, { x: number; y: number; w: number }> = {
-  1:  { x: 1340, y: 1780, w: 310 }, // grant-bed            — visible
-  2:  { x: 2080, y: 1620, w: 330 }, // pierpont-bed         — visible
-  3:  { x: 2580, y: 1820, w: 270 }, // grant-bedside-table  — visible (right)
-  4:  { x: 1680, y: 2260, w: 300 }, // grant-lounge-chair   — lower visible
-  5:  { x: 2700, y: 2340, w: 285 }, // lulu-lounge-chair    — lower-right partial
-  6:  { x:  840, y: 1900, w: 280 }, // grant-armless-chaise — off left
-  7:  { x: 3080, y: 1780, w: 285 }, // grant-bench          — off right
-  8:  { x: 1520, y:  980, w: 265 }, // grant-bookshelf      — off top
-  9:  { x: 2380, y:  900, w: 305 }, // harlow-coffee-table  — off top-right
-  10: { x:  740, y: 2560, w: 265 }, // rumi-cocktail-tables — off bottom-left
-  11: { x: 2880, y: 2740, w: 285 }, // grant-mirror         — off bottom-right
-  12: { x: 3480, y: 2120, w: 305 }, // marmont-dining-table — far right
-  13: { x: 1220, y: 2980, w: 280 }, // marmont-dining-chair — far bottom
-  14: { x:  460, y: 1420, w: 265 }, // grant-counter-stool  — far top-left
-  15: { x: 2060, y: 3280, w: 305 }, // grant-desk           — far bottom-center
-};
+function generateTilePositions(): TileCard[] {
+  const EDGE   = 140; // min distance from tile border
+  const GAP    = 70;  // min gap between two cards
+  const TRIES  = 300; // attempts before accepting overlap
+
+  const placed: TileCard[] = [];
+
+  // Shuffle insertion order for more variety
+  const order = [...BASE_CARDS].sort(() => Math.random() - 0.5);
+
+  for (const card of order) {
+    const xMax = TILE_W - card.w - EDGE;
+    const yMax = TILE_H - card.w - EDGE;
+    let chosen = { x: EDGE, y: EDGE };
+
+    for (let t = 0; t < TRIES; t++) {
+      const x = Math.round(EDGE + Math.random() * (xMax - EDGE));
+      const y = Math.round(EDGE + Math.random() * (yMax - EDGE));
+
+      const clash = placed.some(p => {
+        return (
+          x < p.x + p.w + GAP &&
+          x + card.w + GAP > p.x &&
+          y < p.y + p.w + GAP &&
+          y + card.w + GAP > p.y
+        );
+      });
+
+      if (!clash) { chosen = { x, y }; break; }
+      if (t === TRIES - 1) chosen = { x, y }; // accept best effort
+    }
+
+    placed.push({ id: card.id, x: chosen.x, y: chosen.y, w: card.w });
+  }
+
+  return placed;
+}
+
+/* ─── Tile range type ─────────────────────────────────────────────────────── */
+interface TileRange { c1: number; c2: number; r1: number; r2: number }
+
+/* ─── Calculate visible tile range from current transform ─────────────────── */
+function calcTiles(tx: number, ty: number, s: number): TileRange {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+
+  // One tile's worth of buffer on every side
+  const cxMin = (-tx / s) - TILE_W;
+  const cxMax = ((vw - tx) / s) + TILE_W;
+  const cyMin = (-ty / s) - TILE_H;
+  const cyMax = ((vh - ty) / s) + TILE_H;
+
+  return {
+    c1: Math.max(-10, Math.floor(cxMin / TILE_W)),
+    c2: Math.min(10,  Math.ceil(cxMax  / TILE_W)),
+    r1: Math.max(-8,  Math.floor(cyMin / TILE_H)),
+    r2: Math.min(8,   Math.ceil(cyMax  / TILE_H)),
+  };
+}
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
 export default function HomeCanvas() {
-  const [active, setActive]   = useState<Filter>("All");
-  const [mounted, setMounted] = useState(false);
-  const [progress, setProgress] = useState(50);
+  const [active,     setActive]    = useState<Filter>("All");
+  const [mounted,    setMounted]   = useState(false);
+  const [grabbing,   setGrabbing]  = useState(false);
+  const [zoomPct,    setZoomPct]   = useState(Math.round(INIT_SCALE * 100));
+  const [tiles,      setTiles]     = useState<TileRange>({ c1: -2, c2: 2, r1: -2, r2: 2 });
+  /* Randomised on every mount – empty until useEffect fires */
+  const [tileCards,  setTileCards] = useState<TileCard[]>([]);
 
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef    = useRef<HTMLDivElement>(null);
 
-  // Ref to detect drag vs click reliably
-  const dragMoved = useRef(false);
+  /* Mutable transform – updated every frame without touching React state */
+  const T = useRef({ x: 0, y: 0, s: INIT_SCALE });
 
+  /* Apply CSS transform to the canvas div directly */
+  const commit = useCallback(() => {
+    if (!canvasRef.current) return;
+    const { x, y, s } = T.current;
+    canvasRef.current.style.transform = `translate(${x}px, ${y}px) scale(${s})`;
+  }, []);
+
+  /* Recalculate which tiles to render and update React state (only if changed) */
+  const syncTiles = useCallback(() => {
+    const next = calcTiles(T.current.x, T.current.y, T.current.s);
+    setTiles(prev =>
+      prev.c1 === next.c1 && prev.c2 === next.c2 &&
+      prev.r1 === next.r1 && prev.r2 === next.r2
+        ? prev   // bail out – no re-render
+        : next
+    );
+  }, []);
+
+  /* ── Mount: randomise card positions, center viewport ── */
   useEffect(() => {
-    // Center the canvas cluster in the viewport on mount
-    x.set(-(C - window.innerWidth  / 2));
-    y.set(-(C - window.innerHeight / 2));
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    /* Randomise once per page load */
+    setTileCards(generateTilePositions());
+
+    /*
+     * With transform-origin:0,0 and scale s, canvas point (cx,cy) maps to
+     * viewport (tx + cx*s, ty + cy*s).  Set (tx,ty) so tile-origin (0,0)
+     * centres in the viewport.
+     */
+    T.current = { x: vw / 2, y: vh / 2, s: INIT_SCALE };
+    commit();
+    syncTiles();
     setMounted(true);
+  }, [commit, syncTiles]);
 
-    // Track horizontal pan as a percentage for the bottom-left indicator
-    const unsub = x.on("change", (val) => {
-      const max = CANVAS - window.innerWidth;
-      if (max > 0) {
-        const pct = Math.round(((-val) / max) * 100);
-        setProgress(Math.max(0, Math.min(100, pct)));
+  /* ── Zoom inertia ── */
+  const zoomVel   = useRef(0);           // log-scale zoom speed (units/frame)
+  const zoomMouse = useRef({ x: 0, y: 0 }); // cursor pos at last wheel event
+  const zoomRaf   = useRef<number | null>(null);
+
+  /*
+   * Friction per frame for zoom coast.
+   * 0.82 ≈ ~0.35 s of perceptible coast – shorter than pan so it feels snappy.
+   */
+  const ZOOM_FRICTION = 0.82;
+
+  const startZoomInertia = useCallback(() => {
+    if (zoomRaf.current) cancelAnimationFrame(zoomRaf.current);
+
+    const animate = () => {
+      zoomVel.current *= ZOOM_FRICTION;
+
+      if (Math.abs(zoomVel.current) < 0.0003) {
+        syncTiles();
+        setZoomPct(Math.round(T.current.s * 100));
+        zoomRaf.current = null;
+        return;
       }
-    });
 
-    return unsub;
-  }, [x, y]);
+      const factor = Math.exp(zoomVel.current);
+      const newS   = Math.max(MIN_SCALE, Math.min(MAX_SCALE, T.current.s * factor));
+      const ratio  = newS / T.current.s;
+      const { x: mx, y: my } = zoomMouse.current;
 
-  const filteredIds = new Set(
-    active === "All"
-      ? products.map((p) => p.id)
-      : products
-          .filter((p) => p.category === (active.toLowerCase() as Category))
-          .map((p) => p.id)
-  );
+      T.current.x = mx - (mx - T.current.x) * ratio;
+      T.current.y = my - (my - T.current.y) * ratio;
+      T.current.s = newS;
 
+      commit();
+      setZoomPct(Math.round(newS * 100));
+
+      zoomRaf.current = requestAnimationFrame(animate);
+    };
+
+    zoomRaf.current = requestAnimationFrame(animate);
+  }, [commit, syncTiles]);
+
+  /* Cancel zoom RAF on unmount */
+  useEffect(() => () => { if (zoomRaf.current) cancelAnimationFrame(zoomRaf.current); }, []);
+
+  /* ── Wheel / pinch zoom ── */
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+
+      /* Remember cursor so inertia zooms towards the same point */
+      zoomMouse.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+
+      /* Accumulate log-scale velocity; clamp to prevent runaway */
+      const delta = e.ctrlKey ? -e.deltaY * 0.015 : -e.deltaY * 0.0012;
+      zoomVel.current  = Math.max(-0.18, Math.min(0.18, zoomVel.current + delta));
+
+      startZoomInertia();
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [startZoomInertia]);
+
+  /* ── Pointer drag + inertia ── */
+  const dragging    = useRef(false);
+  const lastPtr     = useRef({ x: 0, y: 0 });
+  const moveDist    = useRef(0);
+  const didDrag     = useRef(false);
+  const tileTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /*
+   * Velocity in px/ms, computed from recent pointer history.
+   * History keeps only events within the last 80 ms so a slow drag
+   * followed by a fast flick correctly reports the flick speed.
+   */
+  const vel         = useRef({ x: 0, y: 0 });
+  const ptrHistory  = useRef<Array<{ x: number; y: number; t: number }>>([]);
+  const rafId       = useRef<number | null>(null);
+
+  /* Friction per animation frame (≈16 ms).  0.93 ≈ 0.8 s coast. */
+  const FRICTION = 0.93;
+
+  const stopInertia = useCallback(() => {
+    if (rafId.current !== null) {
+      cancelAnimationFrame(rafId.current);
+      rafId.current = null;
+    }
+  }, []);
+
+  const startInertia = useCallback(() => {
+    stopInertia();
+
+    const animate = () => {
+      vel.current.x *= FRICTION;
+      vel.current.y *= FRICTION;
+
+      const speed = Math.sqrt(vel.current.x ** 2 + vel.current.y ** 2);
+      if (speed < 0.04) {          // below ~2.4 px/frame → stop
+        syncTiles();
+        rafId.current = null;
+        return;
+      }
+
+      /* ~16 ms per frame: multiply px/ms → px/frame */
+      T.current.x += vel.current.x * 16;
+      T.current.y += vel.current.y * 16;
+      commit();
+
+      /* Tile sync throttled during coast */
+      if (!tileTimer.current) {
+        tileTimer.current = setTimeout(() => {
+          syncTiles();
+          tileTimer.current = null;
+        }, 120);
+      }
+
+      rafId.current = requestAnimationFrame(animate);
+    };
+
+    rafId.current = requestAnimationFrame(animate);
+  }, [commit, stopInertia, syncTiles]);
+
+  /* Cancel inertia RAF on unmount */
+  useEffect(() => stopInertia, [stopInertia]);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    stopInertia();                              // kill any ongoing coast
+    dragging.current      = true;
+    lastPtr.current       = { x: e.clientX, y: e.clientY };
+    moveDist.current      = 0;
+    didDrag.current       = false;
+    vel.current           = { x: 0, y: 0 };
+    ptrHistory.current    = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
+    e.currentTarget.setPointerCapture(e.pointerId);
+    setGrabbing(true);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!dragging.current) return;
+    const dx = e.clientX - lastPtr.current.x;
+    const dy = e.clientY - lastPtr.current.y;
+    lastPtr.current    = { x: e.clientX, y: e.clientY };
+    moveDist.current  += Math.abs(dx) + Math.abs(dy);
+    if (moveDist.current > 4) didDrag.current = true;
+
+    T.current.x += dx;
+    T.current.y += dy;
+    commit();
+
+    /* Append to history, discard samples older than 80 ms */
+    const now = performance.now();
+    ptrHistory.current.push({ x: e.clientX, y: e.clientY, t: now });
+    ptrHistory.current = ptrHistory.current.filter(p => now - p.t <= 80);
+
+    /* Throttled tile sync */
+    if (!tileTimer.current) {
+      tileTimer.current = setTimeout(() => {
+        syncTiles();
+        tileTimer.current = null;
+      }, 120);
+    }
+  };
+
+  const onPointerUp = () => {
+    dragging.current = false;
+    setGrabbing(false);
+    if (tileTimer.current) { clearTimeout(tileTimer.current); tileTimer.current = null; }
+
+    /* Compute release velocity from the recent history window */
+    const h = ptrHistory.current;
+    if (h.length >= 2) {
+      const oldest = h[0];
+      const newest = h[h.length - 1];
+      const dt = newest.t - oldest.t;
+      if (dt > 0) {
+        vel.current.x = (newest.x - oldest.x) / dt;
+        vel.current.y = (newest.y - oldest.y) / dt;
+      }
+    }
+
+    startInertia();
+  };
+
+  /* ── Card instances for all visible tiles ── */
+  const cardInstances = useMemo(() => {
+    if (tileCards.length === 0) return [];
+
+    const result: Array<{
+      key:      string;
+      x:        number;
+      y:        number;
+      w:        number;
+      img:      string;
+      slug:     string;
+      name:     string;
+      category: string;
+    }> = [];
+
+    for (let col = tiles.c1; col <= tiles.c2; col++) {
+      for (let row = tiles.r1; row <= tiles.r2; row++) {
+        for (const card of tileCards) {
+          const p = products.find(pr => pr.id === card.id);
+          if (!p) continue;
+          result.push({
+            key:      `${col}:${row}:${card.id}`,
+            x:        card.x + col * TILE_W,
+            y:        card.y + row * TILE_H,
+            w:        card.w,
+            img:      p.images[0],
+            slug:     p.slug,
+            name:     p.name,
+            category: p.category,
+          });
+        }
+      }
+    }
+    return result;
+  }, [tiles, tileCards]);
+
+  /* ─── Render ──────────────────────────────────────────────────────────── */
   return (
     <>
-      {/* ── Draggable canvas ── */}
+      {/* ── Canvas viewport ── */}
       <div
-        className={`fixed inset-0 z-0 overflow-hidden transition-opacity duration-500 select-none
-          ${mounted ? "opacity-100" : "opacity-0"}`}
-        style={{ cursor: "crosshair" }}
+        ref={containerRef}
+        className={`fixed inset-0 z-0 overflow-hidden transition-opacity duration-500 ${
+          mounted ? "opacity-100" : "opacity-0"
+        }`}
+        style={{ cursor: grabbing ? "grabbing" : "crosshair" }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
       >
-        <motion.div
-          drag
-          style={{ x, y, width: CANVAS, height: CANVAS, position: "absolute" }}
-          dragMomentum={false}
-          dragElastic={0}
-          onDragStart={() => { dragMoved.current = true; }}
-          onDragEnd={()   => { setTimeout(() => { dragMoved.current = false; }, 80); }}
+        {/* Canvas layer — transform is applied here */}
+        <div
+          ref={canvasRef}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            transformOrigin: "0 0",
+            willChange: "transform",
+          }}
         >
-          {products.map((product) => {
-            const card = CARDS[product.id];
-            if (!card) return null;
-            const visible = filteredIds.has(product.id);
-
+          {cardInstances.map(({ key, x, y, w, img, slug, name, category }) => {
+            const visible = active === "All" || category === (active.toLowerCase() as Category);
             return (
-              <motion.div
-                key={product.id}
-                animate={{ opacity: visible ? 1 : 0, scale: visible ? 1 : 0.97 }}
-                transition={{ duration: 0.35, ease: "easeInOut" }}
+              <div
+                key={key}
+                className="canvas-card"
                 style={{
                   position: "absolute",
-                  left: card.x,
-                  top:  card.y,
-                  width: card.w,
-                  height: card.w,
+                  left: x,
+                  top: y,
+                  width: w,
+                  height: w,
+                  opacity: visible ? 1 : 0,
+                  transition: "opacity 0.35s ease-in-out, transform 0.32s cubic-bezier(0.25,0.46,0.45,0.94)",
                   pointerEvents: visible ? "auto" : "none",
                 }}
               >
-                <Link
-                  href={`/products/${product.slug}`}
-                  onClick={(e) => { if (dragMoved.current) e.preventDefault(); }}
-                  draggable={false}
-                  className="block w-full h-full overflow-hidden bg-[#EDE8E3]"
-                >
-                  <div className="relative w-full h-full">
-                    <Image
-                      src={product.images[0]}
-                      alt={product.name}
-                      fill
+                {/* Inner clip — keeps the image inside the card boundary */}
+                <div style={{ width: "100%", height: "100%", overflow: "hidden", backgroundColor: "#EDE8E3" }}>
+                  <Link
+                    href={`/products/${slug}`}
+                    onClick={e => { if (didDrag.current) e.preventDefault(); }}
+                    draggable={false}
+                    style={{ display: "block", width: "100%", height: "100%" }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={img}
+                      alt={name}
+                      loading="lazy"
                       draggable={false}
-                      sizes={`${card.w}px`}
-                      className="object-cover pointer-events-none"
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "cover",
+                        display: "block",
+                        pointerEvents: "none",
+                        userSelect: "none",
+                      }}
                     />
-                  </div>
-                </Link>
-              </motion.div>
+                  </Link>
+                </div>
+
+                {/* Product name — fades in on hover */}
+                <div className="canvas-card-name">
+                  <span
+                    className="font-heading italic text-text-primary"
+                    style={{ fontSize: "12px", letterSpacing: "0.02em", lineHeight: 1.3 }}
+                  >
+                    {name}
+                  </span>
+                </div>
+              </div>
             );
           })}
-        </motion.div>
+        </div>
 
-        {/* Fixed crosshair in the center of the viewport */}
+        {/* Viewport crosshair */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <span
-            className="font-body font-light text-text-primary/15 select-none"
-            style={{ fontSize: "22px", lineHeight: 1 }}
+            className="font-body font-light select-none"
+            style={{ fontSize: "22px", lineHeight: 1, color: "rgba(26,26,26,0.12)" }}
           >
             +
           </span>
         </div>
       </div>
 
-      {/* ── Bottom bar (above canvas, below header) ── */}
+      {/* ── Bottom bar ── */}
       <div className="fixed bottom-0 left-0 right-0 z-40 px-5 pb-5 pointer-events-none">
         <div className="relative flex items-end justify-between">
 
-          {/* Left: horizontal pan percentage */}
+          {/* Zoom percentage */}
           <span
-            className="font-body tabular-nums select-none pointer-events-none"
+            className="font-body tabular-nums select-none"
             style={{ fontSize: "11px", letterSpacing: "0.08em", color: "rgba(107,101,96,0.55)" }}
           >
-            {String(progress).padStart(2, "0")}%
+            {zoomPct}%
           </span>
 
-          {/* Center: category filter */}
+          {/* Category filter — centered */}
           <div className="absolute left-1/2 -translate-x-1/2 bottom-0 flex items-center pointer-events-auto">
             {CATS.map((cat, i) => {
               const isActive = cat === active;
               return (
                 <span key={cat} className="flex items-center">
                   {i > 0 && (
-                    <span className="font-heading text-[14px] text-text-secondary/25 mx-2 select-none">
+                    <span
+                      className="font-heading text-text-secondary/25 mx-2 select-none"
+                      style={{ fontSize: "14px" }}
+                    >
                       /
                     </span>
                   )}
@@ -169,9 +501,10 @@ export default function HomeCanvas() {
                     onClick={() => setActive(cat)}
                     className={`font-heading italic leading-none transition-all duration-200 ${
                       isActive
-                        ? "text-[15px] text-text-primary"
-                        : "text-[14px] text-text-secondary/45 hover:text-text-secondary"
+                        ? "text-text-primary"
+                        : "text-text-secondary/45 hover:text-text-secondary"
                     }`}
+                    style={{ fontSize: isActive ? "15px" : "14px" }}
                   >
                     {cat}
                   </button>
@@ -180,8 +513,10 @@ export default function HomeCanvas() {
             })}
           </div>
 
-          {/* Right: empty (balanced layout) */}
-          <span className="opacity-0 pointer-events-none text-[11px]">00%</span>
+          {/* Spacer */}
+          <span className="opacity-0 pointer-events-none" style={{ fontSize: "11px" }}>
+            00%
+          </span>
         </div>
       </div>
     </>
