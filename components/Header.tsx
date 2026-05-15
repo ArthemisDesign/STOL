@@ -3,14 +3,13 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
-import { Search } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
 const NAV_LINKS = [
-  { label: "Home",     href: "/"          },
-  { label: "Products", href: "/products"  },
-  { label: "About",    href: "/about"     },
-  { label: "Trade",    href: "/trade"     },
+  { label: "Home",     href: "/" },
+  { label: "Products", href: "/products" },
+  { label: "About",    href: "/about" },
+  { label: "Trade",    href: "/trade" },
 ];
 
 function getPageLabel(pathname: string): string {
@@ -21,70 +20,103 @@ function getPageLabel(pathname: string): string {
   return match?.label ?? "Lusano";
 }
 
-/* ─── Asterisk brand mark ─────────────────────────────────────────────────── */
-function AsteriskMark({ className = "" }: { className?: string }) {
-  return (
-    <span
-      className={`w-[26px] h-[26px] border border-text-primary/25 flex items-center justify-center font-heading text-[14px] leading-none select-none flex-shrink-0 ${className}`}
-    >
-      ✳
-    </span>
-  );
-}
-
-/* ─── Header ──────────────────────────────────────────────────────────────── */
-export default function Header() {
-  const [scrolled, setScrolled]   = useState(false);
-  const [menuOpen, setMenuOpen]   = useState(false);
-  const pathname = usePathname();
+function useLATime(): string {
+  const [display, setDisplay] = useState("");
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    const update = () => {
+      const parts = new Intl.DateTimeFormat("en-US", {
+        timeZone: "America/Los_Angeles",
+        hour:   "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).formatToParts(new Date());
+      const h = parts.find((p) => p.type === "hour")?.value   ?? "00";
+      const m = parts.find((p) => p.type === "minute")?.value ?? "00";
+      setDisplay(`${h} ${m}`);
+    };
+    update();
+    const id = setInterval(update, 30_000);
+    return () => clearInterval(id);
   }, []);
 
-  // Lock body scroll while overlay is open
+  return display;
+}
+
+export default function Header() {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const pathname  = usePathname();
+  const laTime    = useLATime();
+  const currentPage = getPageLabel(pathname);
+
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
+    if (menuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
     return () => { document.body.style.overflow = ""; };
   }, [menuOpen]);
 
   return (
     <>
-      {/* ── Fixed top bar ── */}
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled
-            ? "bg-background/95 backdrop-blur-sm border-b border-accent/20"
-            : "bg-transparent"
-        }`}
-      >
-        <div className="px-5 md:px-8 h-12 flex items-center justify-between">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2.5">
-            <AsteriskMark />
-            <span className="font-heading text-[13px] font-light tracking-[0.28em] uppercase text-text-primary">
-              Lusano
-            </span>
+      {/* ── Top bar ── */}
+      <header className="fixed top-0 left-0 right-0 z-50">
+        <div className="px-5 md:px-7 h-12 flex items-center justify-between">
+
+          {/* Left: lowercase wordmark */}
+          <Link
+            href="/"
+            className="font-heading font-light tracking-[0.07em] text-text-primary hover:text-accent transition-colors duration-200"
+            style={{ fontSize: "14px" }}
+          >
+            lusano
           </Link>
 
-          {/* Right actions */}
-          <div className="flex items-center gap-5">
-            <button
-              aria-label="Search"
-              className="text-text-secondary hover:text-text-primary transition-colors duration-200"
+          {/* Center: menu trigger pill showing current page */}
+          <button
+            onClick={() => setMenuOpen(true)}
+            aria-label="Open navigation"
+            className="flex items-center gap-2.5 border border-text-primary/15 bg-background/60 backdrop-blur-sm px-4 py-1.5 hover:border-text-primary/30 transition-all duration-200 group"
+          >
+            {/* Hamburger — two lines, matching the screenshot */}
+            <svg
+              width="14"
+              height="9"
+              viewBox="0 0 14 9"
+              fill="none"
+              className="text-text-secondary/70 group-hover:text-text-secondary transition-colors flex-shrink-0"
             >
-              <Search size={15} strokeWidth={1.25} />
-            </button>
-            <button
-              onClick={() => setMenuOpen(true)}
-              aria-label="Open menu"
-              className="font-body text-[10px] uppercase tracking-[0.22em] text-text-secondary hover:text-text-primary transition-colors duration-200"
+              <line x1="0" y1="1"   x2="14" y2="1"   stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+              <line x1="0" y1="5"   x2="14" y2="5"   stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+              <line x1="0" y1="8.5" x2="14" y2="8.5" stroke="currentColor" strokeWidth="1" strokeLinecap="round" />
+            </svg>
+            <span
+              className="font-body uppercase text-text-secondary"
+              style={{ fontSize: "10px", letterSpacing: "0.18em" }}
             >
-              Menu
-            </button>
+              {currentPage}
+            </span>
+          </button>
+
+          {/* Right: LA time + city */}
+          <div className="flex items-center gap-2 min-w-0">
+            {laTime && (
+              <span
+                className="font-body tabular-nums text-text-secondary/55 hidden sm:block"
+                style={{ fontSize: "10px", letterSpacing: "0.07em" }}
+              >
+                {laTime}
+              </span>
+            )}
+            <span
+              className="font-body text-text-secondary/45 hidden sm:block"
+              style={{ fontSize: "10px", letterSpacing: "0.06em" }}
+            >
+              Los Angeles
+            </span>
           </div>
+
         </div>
       </header>
 
@@ -106,25 +138,30 @@ export default function Header() {
               backgroundSize: "38px 38px",
             }}
           >
-            {/* Top bar — mirrors the header */}
-            <div className="px-5 md:px-8 h-12 flex items-center justify-between border-b border-accent/20 flex-shrink-0">
+            {/* Top bar inside overlay */}
+            <div className="px-5 md:px-7 h-12 flex items-center justify-between border-b border-accent/20 flex-shrink-0">
               <div className="flex items-center gap-2.5">
-                <AsteriskMark />
-                <span className="font-heading italic text-[13px] text-text-secondary">
-                  {getPageLabel(pathname)}
+                <span
+                  className="w-[22px] h-[22px] border border-text-primary/20 flex items-center justify-center font-heading leading-none select-none"
+                  style={{ fontSize: "12px" }}
+                >
+                  ✳
+                </span>
+                <span className="font-heading italic text-text-secondary" style={{ fontSize: "13px" }}>
+                  {currentPage}
                 </span>
               </div>
               <button
                 onClick={() => setMenuOpen(false)}
-                aria-label="Close menu"
-                className="font-body text-[10px] uppercase tracking-[0.22em] text-text-secondary hover:text-text-primary transition-colors"
+                className="font-body uppercase text-text-secondary hover:text-text-primary transition-colors"
+                style={{ fontSize: "10px", letterSpacing: "0.22em" }}
               >
                 Close
               </button>
             </div>
 
             {/* Nav items */}
-            <nav className="flex flex-col flex-1 px-5 md:px-8 overflow-y-auto">
+            <nav className="flex flex-col flex-1 px-5 md:px-7 overflow-y-auto">
               {NAV_LINKS.map(({ label, href }, i) => (
                 <motion.div
                   key={href}
@@ -141,11 +178,12 @@ export default function Header() {
                     onClick={() => setMenuOpen(false)}
                     className="group flex items-baseline gap-5 py-5 border-b border-accent/20"
                   >
-                    {/* Counter */}
-                    <span className="font-body text-[10px] tracking-wider text-text-secondary/40 w-8 flex-shrink-0">
+                    <span
+                      className="font-body tracking-wider text-text-secondary/40 w-8 flex-shrink-0"
+                      style={{ fontSize: "10px" }}
+                    >
                       ({String(i + 1).padStart(2, "0")})
                     </span>
-                    {/* Label */}
                     <span
                       className="font-heading italic font-light text-text-primary leading-none transition-all duration-200 group-hover:translate-x-1.5 group-hover:text-accent"
                       style={{ fontSize: "clamp(30px, 9vw, 56px)" }}
@@ -158,22 +196,23 @@ export default function Header() {
             </nav>
 
             {/* Bottom social row */}
-            <div className="px-5 md:px-8 py-5 flex items-center justify-between border-t border-accent/20 flex-shrink-0">
+            <div className="px-5 md:px-7 py-5 flex items-center justify-between border-t border-accent/20 flex-shrink-0">
               <a
                 href="mailto:hello@lusano.com"
-                className="font-body text-[11px] tracking-[0.14em] text-text-secondary hover:text-text-primary transition-colors"
+                className="font-body tracking-[0.14em] text-text-secondary hover:text-text-primary transition-colors"
+                style={{ fontSize: "11px" }}
               >
                 em.
               </a>
-              {/* Centre mark */}
-              <span className="font-heading text-[16px] text-text-secondary/30">
+              <span className="font-heading text-text-secondary/30" style={{ fontSize: "16px" }}>
                 ✳
               </span>
               <a
                 href="https://instagram.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-body text-[11px] tracking-[0.14em] text-text-secondary hover:text-text-primary transition-colors"
+                className="font-body tracking-[0.14em] text-text-secondary hover:text-text-primary transition-colors"
+                style={{ fontSize: "11px" }}
               >
                 ig.
               </a>

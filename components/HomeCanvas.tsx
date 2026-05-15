@@ -1,271 +1,189 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { motion, useMotionValue } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import { products, type Product, type Category } from "@/lib/products";
+import { products, type Category } from "@/lib/products";
 
-/* ─── Config ──────────────────────────────────────────────────────────────── */
+/* ─── Filter config ───────────────────────────────────────────────────────── */
 const CATS = ["All", "Sleep", "Live", "Eat", "Work"] as const;
 type Filter = (typeof CATS)[number];
 
-// Primary loop duration (ms) — drives the progress counter
-const DURATION_A = 60_000;
-const DURATION_B = 80_000;
-
-/* ─── Helpers ─────────────────────────────────────────────────────────────── */
+/* ─── Canvas layout ───────────────────────────────────────────────────────── */
+const CANVAS = 4200;          // canvas px (square)
+const C      = CANVAS / 2;   // center = 2100
 
 /**
- * Triple the product list so the CSS translateY(-33.33%) animation is seamless.
- * If fewer than 5 products exist, pad first so the loop looks dense enough.
+ * Product card positions and sizes within the 4200×4200 canvas.
+ * Cluster 3-4 around the center (visible on load) then scatter the rest.
  */
-function buildTrack(items: Product[]): Product[] {
-  if (items.length === 0) return [];
-  const base =
-    items.length < 5
-      ? Array.from({ length: Math.ceil(5 / items.length) }, () => items).flat()
-      : items;
-  return [...base, ...base, ...base];
-}
+const CARDS: Record<number, { x: number; y: number; w: number }> = {
+  1:  { x: 1340, y: 1780, w: 310 }, // grant-bed            — visible
+  2:  { x: 2080, y: 1620, w: 330 }, // pierpont-bed         — visible
+  3:  { x: 2580, y: 1820, w: 270 }, // grant-bedside-table  — visible (right)
+  4:  { x: 1680, y: 2260, w: 300 }, // grant-lounge-chair   — lower visible
+  5:  { x: 2700, y: 2340, w: 285 }, // lulu-lounge-chair    — lower-right partial
+  6:  { x:  840, y: 1900, w: 280 }, // grant-armless-chaise — off left
+  7:  { x: 3080, y: 1780, w: 285 }, // grant-bench          — off right
+  8:  { x: 1520, y:  980, w: 265 }, // grant-bookshelf      — off top
+  9:  { x: 2380, y:  900, w: 305 }, // harlow-coffee-table  — off top-right
+  10: { x:  740, y: 2560, w: 265 }, // rumi-cocktail-tables — off bottom-left
+  11: { x: 2880, y: 2740, w: 285 }, // grant-mirror         — off bottom-right
+  12: { x: 3480, y: 2120, w: 305 }, // marmont-dining-table — far right
+  13: { x: 1220, y: 2980, w: 280 }, // marmont-dining-chair — far bottom
+  14: { x:  460, y: 1420, w: 265 }, // grant-counter-stool  — far top-left
+  15: { x: 2060, y: 3280, w: 305 }, // grant-desk           — far bottom-center
+};
 
-function filterProducts(f: Filter): Product[] {
-  return f === "All"
-    ? products
-    : products.filter((p) => p.category === (f.toLowerCase() as Category));
-}
-
-/* ─── Canvas card — pure image link, no visible text ─────────────────────── */
-function CanvasImage({
-  product,
-  sizes,
-  showLabel,
-}: {
-  product: Product;
-  sizes: string;
-  showLabel: boolean;
-}) {
-  return (
-    <Link
-      href={`/products/${product.slug}`}
-      className="group relative block flex-shrink-0 aspect-square overflow-hidden bg-[#EDE8E3]"
-      tabIndex={-1}
-    >
-      <Image
-        src={product.images[0]}
-        alt={product.name}
-        fill
-        sizes={sizes}
-        className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
-      />
-      {/* Label overlay — only visible in expanded (+) mode */}
-      {showLabel && (
-        <div className="absolute inset-0 flex items-end bg-gradient-to-t from-black/45 via-transparent p-5 sm:p-7">
-          <div>
-            <p className="font-body text-[9px] uppercase tracking-[0.2em] text-white/55 mb-1">
-              {product.subcategory}
-            </p>
-            <h3 className="font-heading italic font-light text-white leading-none"
-              style={{ fontSize: "clamp(18px, 2.5vw, 30px)" }}>
-              {product.name}
-            </h3>
-          </div>
-        </div>
-      )}
-    </Link>
-  );
-}
-
-/* ─── Main component ──────────────────────────────────────────────────────── */
+/* ─── Component ───────────────────────────────────────────────────────────── */
 export default function HomeCanvas() {
-  const [active, setActive]       = useState<Filter>("All");
-  const [expanded, setExpanded]   = useState(false);
-  const [progress, setProgress]   = useState(0);
-  const startRef                  = useRef(Date.now());
+  const [active, setActive]   = useState<Filter>("All");
+  const [mounted, setMounted] = useState(false);
+  const [progress, setProgress] = useState(50);
 
-  /* Reset + start loop-progress counter whenever filter or mode changes */
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  // Ref to detect drag vs click reliably
+  const dragMoved = useRef(false);
+
   useEffect(() => {
-    startRef.current = Date.now();
-    setProgress(0);
-    const id = setInterval(() => {
-      const pct = Math.floor(((Date.now() - startRef.current) % DURATION_A) / DURATION_A * 100);
-      setProgress(pct);
-    }, 250);
-    return () => clearInterval(id);
-  }, [active, expanded]);
+    // Center the canvas cluster in the viewport on mount
+    x.set(-(C - window.innerWidth  / 2));
+    y.set(-(C - window.innerHeight / 2));
+    setMounted(true);
 
-  const filtered = useMemo(() => filterProducts(active), [active]);
+    // Track horizontal pan as a percentage for the bottom-left indicator
+    const unsub = x.on("change", (val) => {
+      const max = CANVAS - window.innerWidth;
+      if (max > 0) {
+        const pct = Math.round(((-val) / max) * 100);
+        setProgress(Math.max(0, Math.min(100, pct)));
+      }
+    });
 
-  /* Split into two phase-offset column tracks */
-  const colA = useMemo(
-    () => buildTrack(filtered.filter((_, i) => i % 2 === 0)),
-    [filtered]
+    return unsub;
+  }, [x, y]);
+
+  const filteredIds = new Set(
+    active === "All"
+      ? products.map((p) => p.id)
+      : products
+          .filter((p) => p.category === (active.toLowerCase() as Category))
+          .map((p) => p.id)
   );
-  const colB = useMemo(
-    () => buildTrack(filtered.filter((_, i) => i % 2 !== 0).length
-      ? filtered.filter((_, i) => i % 2 !== 0)
-      : filtered                   // fallback if category has 1 product
-    ),
-    [filtered]
-  );
-
-  /* Restart CSS animation when content changes */
-  const animKey = `${active}-${expanded}`;
 
   return (
-    <div className="pt-12">
+    <>
+      {/* ── Draggable canvas ── */}
+      <div
+        className={`fixed inset-0 z-0 overflow-hidden transition-opacity duration-500 select-none
+          ${mounted ? "opacity-100" : "opacity-0"}`}
+        style={{ cursor: "crosshair" }}
+      >
+        <motion.div
+          drag
+          style={{ x, y, width: CANVAS, height: CANVAS, position: "absolute" }}
+          dragMomentum={false}
+          dragElastic={0}
+          onDragStart={() => { dragMoved.current = true; }}
+          onDragEnd={()   => { setTimeout(() => { dragMoved.current = false; }, 80); }}
+        >
+          {products.map((product) => {
+            const card = CARDS[product.id];
+            if (!card) return null;
+            const visible = filteredIds.has(product.id);
 
-      {/* ── Sticky filter bar ── */}
-      <div className="sticky top-12 z-40 border-b border-accent/20 bg-background/90 backdrop-blur-sm">
-        <div className="h-10 flex items-center justify-center">
-          {CATS.map((cat, i) => {
-            const isActive = cat === active;
             return (
-              <span key={cat} className="flex items-center">
-                {i > 0 && (
-                  <span className="font-heading text-[14px] text-text-secondary/25 mx-2 select-none">
-                    /
-                  </span>
-                )}
-                <button
-                  onClick={() => setActive(cat)}
-                  className={`font-heading italic leading-none transition-all duration-200 ${
-                    isActive
-                      ? "text-[15px] text-text-primary"
-                      : "text-[14px] text-text-secondary/50 hover:text-text-secondary"
-                  }`}
+              <motion.div
+                key={product.id}
+                animate={{ opacity: visible ? 1 : 0, scale: visible ? 1 : 0.97 }}
+                transition={{ duration: 0.35, ease: "easeInOut" }}
+                style={{
+                  position: "absolute",
+                  left: card.x,
+                  top:  card.y,
+                  width: card.w,
+                  height: card.w,
+                  pointerEvents: visible ? "auto" : "none",
+                }}
+              >
+                <Link
+                  href={`/products/${product.slug}`}
+                  onClick={(e) => { if (dragMoved.current) e.preventDefault(); }}
+                  draggable={false}
+                  className="block w-full h-full overflow-hidden bg-[#EDE8E3]"
                 >
-                  {cat}
-                </button>
-              </span>
+                  <div className="relative w-full h-full">
+                    <Image
+                      src={product.images[0]}
+                      alt={product.name}
+                      fill
+                      draggable={false}
+                      sizes={`${card.w}px`}
+                      className="object-cover pointer-events-none"
+                    />
+                  </div>
+                </Link>
+              </motion.div>
             );
           })}
+        </motion.div>
+
+        {/* Fixed crosshair in the center of the viewport */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <span
+            className="font-body font-light text-text-primary/15 select-none"
+            style={{ fontSize: "22px", lineHeight: 1 }}
+          >
+            +
+          </span>
         </div>
       </div>
 
-      {/* ── Infinite marquee canvas ── */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={animKey}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.25 }}
-          className={`flex overflow-hidden ${
-            expanded ? "" : "gap-px bg-accent/15"
-          }`}
-          style={{ height: "calc(100vh - 88px)" }}
-        >
-          {expanded ? (
-            /* ── Expanded (+): single full-width column with name labels ── */
-            <div className="flex-1 overflow-hidden">
-              <div
-                key={`exp-${animKey}`}
-                className="flex flex-col"
-                style={{ animation: `scrollUpTriple ${DURATION_A / 1000}s linear infinite` }}
-              >
-                {buildTrack(filtered).map((product, i) => (
-                  <CanvasImage
-                    key={`${product.id}-exp-${i}`}
-                    product={product}
-                    sizes="100vw"
-                    showLabel
-                  />
-                ))}
-              </div>
-            </div>
-          ) : (
-            /* ── Default (–): two-column marquee, pure images ── */
-            <>
-              {/* Column A */}
-              <div className="flex-1 overflow-hidden bg-background">
-                <div
-                  key={`a-${animKey}`}
-                  className="flex flex-col"
-                  style={{ animation: `scrollUpTriple ${DURATION_A / 1000}s linear infinite` }}
-                >
-                  {colA.map((product, i) => (
-                    <CanvasImage
-                      key={`${product.id}-a-${i}`}
-                      product={product}
-                      sizes="(max-width: 640px) 100vw, 50vw"
-                      showLabel={false}
-                    />
-                  ))}
-                </div>
-              </div>
+      {/* ── Bottom bar (above canvas, below header) ── */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 px-5 pb-5 pointer-events-none">
+        <div className="relative flex items-end justify-between">
 
-              {/* Column B — hidden on mobile, phase-offset on desktop */}
-              <div className="hidden sm:block flex-1 overflow-hidden bg-background">
-                <div
-                  key={`b-${animKey}`}
-                  className="flex flex-col"
-                  style={{
-                    animation: `scrollUpTriple ${DURATION_B / 1000}s linear infinite`,
-                    animationDelay: `-${(DURATION_B / 1000) * 0.35}s`,
-                  }}
-                >
-                  {colB.map((product, i) => (
-                    <CanvasImage
-                      key={`${product.id}-b-${i}`}
-                      product={product}
-                      sizes="50vw"
-                      showLabel={false}
-                    />
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* ── Bottom fixed bar ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 px-5 py-4 flex items-end justify-between pointer-events-none">
-
-        {/* [+|-] toggle */}
-        <div className="flex items-baseline gap-px font-body text-[11px] tracking-[0.05em] pointer-events-auto select-none">
-          <span className="text-text-secondary/35">[</span>
-          <button
-            onClick={() => setExpanded(true)}
-            className={`px-[3px] transition-colors duration-150 ${
-              expanded ? "text-text-primary" : "text-text-secondary/35 hover:text-text-secondary"
-            }`}
-            aria-label="Expanded view"
-          >
-            +
-          </button>
-          <span className="text-text-secondary/25 px-[1px]">|</span>
-          <button
-            onClick={() => setExpanded(false)}
-            className={`px-[3px] transition-colors duration-150 ${
-              !expanded ? "text-text-primary" : "text-text-secondary/35 hover:text-text-secondary"
-            }`}
-            aria-label="Grid view"
-          >
-            −
-          </button>
-          <span className="text-text-secondary/35">]</span>
-        </div>
-
-        {/* Progress counter + bar */}
-        <div className="flex flex-col items-end gap-[5px] pointer-events-none">
+          {/* Left: horizontal pan percentage */}
           <span
-            className="font-body tabular-nums select-none"
+            className="font-body tabular-nums select-none pointer-events-none"
             style={{ fontSize: "11px", letterSpacing: "0.08em", color: "rgba(107,101,96,0.55)" }}
           >
             {String(progress).padStart(2, "0")}%
           </span>
-          {/* Progress line */}
-          <div className="relative w-20 h-px bg-accent/20 overflow-hidden">
-            <motion.div
-              className="absolute inset-y-0 left-0 bg-text-secondary/30"
-              animate={{ width: `${progress}%` }}
-              transition={{ duration: 0.25, ease: "linear" }}
-            />
+
+          {/* Center: category filter */}
+          <div className="absolute left-1/2 -translate-x-1/2 bottom-0 flex items-center pointer-events-auto">
+            {CATS.map((cat, i) => {
+              const isActive = cat === active;
+              return (
+                <span key={cat} className="flex items-center">
+                  {i > 0 && (
+                    <span className="font-heading text-[14px] text-text-secondary/25 mx-2 select-none">
+                      /
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setActive(cat)}
+                    className={`font-heading italic leading-none transition-all duration-200 ${
+                      isActive
+                        ? "text-[15px] text-text-primary"
+                        : "text-[14px] text-text-secondary/45 hover:text-text-secondary"
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                </span>
+              );
+            })}
           </div>
+
+          {/* Right: empty (balanced layout) */}
+          <span className="opacity-0 pointer-events-none text-[11px]">00%</span>
         </div>
       </div>
-    </div>
+    </>
   );
 }
