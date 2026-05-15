@@ -105,13 +105,12 @@ export default function Header() {
         style={{ transform: "translateX(-50%)" }}
       >
         <div
+          className="liquid-glass"
           style={{
-            width:           menuOpen ? "300px" : "220px",
-            borderRadius:    menuOpen ? "12px"  : "999px",
-            backgroundColor: "rgba(196,168,130,0.22)",
-            border:          "1px solid rgba(166,141,116,0.32)",
-            overflow:        "hidden",
-            transition:      `width ${dur} ${ease}, border-radius ${dur} ${ease}`,
+            width:        menuOpen ? "300px" : "220px",
+            borderRadius: menuOpen ? "12px"  : "999px",
+            overflow:     "hidden",
+            transition:   `width ${dur} ${ease}, border-radius ${dur} ${ease}`,
           }}
         >
           {/* ── Top row — always visible ── */}
@@ -178,7 +177,7 @@ export default function Header() {
                 transition: `opacity 0.2s ease ${menuOpen ? "0.12s" : "0s"}`,
               }}
             >
-              <div style={{ borderTop: "1px solid rgba(166,141,116,0.22)" }} />
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.35)" }} />
 
               <nav className="flex flex-col px-4">
                 {NAV_LINKS.map(({ label, href }, i) => (
@@ -187,7 +186,7 @@ export default function Header() {
                     href={href}
                     onClick={() => setMenuOpen(false)}
                     className="group flex items-baseline gap-4 py-3.5 border-b"
-                    style={{ borderColor: "rgba(166,141,116,0.18)" }}
+                    style={{ borderColor: "rgba(255,255,255,0.30)" }}
                   >
                     <span
                       className="font-body text-text-secondary/40 flex-shrink-0"
@@ -207,7 +206,7 @@ export default function Header() {
 
               <div
                 className="px-4 py-4 flex items-center justify-between"
-                style={{ borderTop: "1px solid rgba(166,141,116,0.16)" }}
+                style={{ borderTop: "1px solid rgba(255,255,255,0.30)" }}
               >
                 <a
                   href="mailto:hello@lusano.com"

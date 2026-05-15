@@ -1,98 +1,161 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { products, type Category } from "@/lib/products";
 import ProductCard from "@/components/ProductCard";
 
-/* ─── Filter config ───────────────────────────────────────────────────────── */
-const TABS: { label: string; value: Category | "all" }[] = [
-  { label: "All", value: "all" },
+const CATEGORIES: { label: string; value: Category | "all" }[] = [
+  { label: "All",   value: "all"   },
   { label: "Sleep", value: "sleep" },
-  { label: "Live", value: "live" },
-  { label: "Eat", value: "eat" },
-  { label: "Work", value: "work" },
+  { label: "Live",  value: "live"  },
+  { label: "Eat",   value: "eat"   },
+  { label: "Work",  value: "work"  },
 ];
 
-/* ─── Page ────────────────────────────────────────────────────────────────── */
+type ViewMode = "grid" | "feed";
+
 export default function ProductsPage() {
-  const [activeTab, setActiveTab] = useState<Category | "all">("all");
+  const [category,  setCategory]  = useState<Category | "all">("all");
+  const [view,      setView]      = useState<ViewMode>("grid");
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const filtered = useMemo(
-    () =>
-      activeTab === "all"
-        ? products
-        : products.filter((p) => p.category === activeTab),
-    [activeTab]
+    () => category === "all" ? products : products.filter(p => p.category === category),
+    [category]
   );
 
+  const activeLabel = CATEGORIES.find(c => c.value === category)?.label ?? "All";
+
   return (
-    <div className="min-h-screen bg-background pt-32 pb-24 px-6 md:px-10 max-w-screen-xl mx-auto">
+    <div className="min-h-screen pt-14 bg-solid" style={{ color: "#1A1A1A" }}>
 
-      {/* ── Page heading ── */}
-      <div className="mb-12 text-center">
-        <h1 className="font-heading text-[clamp(36px,5vw,64px)] font-light text-text-primary tracking-tight leading-none mb-3">
-          The Collection
-        </h1>
-        <p className="font-body text-sm text-text-secondary">
-          Heirloom-quality furniture, designed in Los Angeles.
-        </p>
-      </div>
+      {/* ── Toolbar ── */}
+      <div
+        className="px-6 md:px-10 flex items-center justify-between"
+        style={{
+          height: "44px",
+          borderBottom: "1px solid rgba(166,141,116,0.18)",
+          backgroundColor: "var(--background)",
+        }}
+      >
+        {/* Left: Filter */}
+        <div className="relative">
+          <button
+            onClick={() => setFilterOpen(v => !v)}
+            className="flex items-center gap-1.5 font-body text-text-secondary hover:text-text-primary transition-colors"
+            style={{ fontSize: "11px", letterSpacing: "0.06em" }}
+          >
+            <span>Filter</span>
+            <span style={{ fontSize: "14px", lineHeight: 1 }}>+</span>
+          </button>
 
-      {/* ── Filter tabs ── */}
-      <div className="flex justify-center mb-14">
-        <div className="flex items-center gap-8 relative">
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.value;
-            return (
-              <button
-                key={tab.value}
-                onClick={() => setActiveTab(tab.value)}
-                className="relative pb-2 font-body text-[11px] uppercase tracking-[0.2em] transition-colors duration-200"
-                style={{
-                  color: isActive ? "#1A1A1A" : "#6B6560",
-                }}
-              >
-                {tab.label}
-
-                {/* Animated underline using layoutId for smooth slide */}
-                {isActive && (
-                  <motion.span
-                    layoutId="tab-underline"
-                    className="absolute bottom-0 left-0 right-0 h-px bg-accent"
-                    transition={{ type: "spring", stiffness: 500, damping: 40 }}
-                  />
-                )}
-              </button>
-            );
-          })}
+          {/* Filter dropdown */}
+          {filterOpen && (
+            <div
+              className="absolute top-full left-0 mt-2 flex flex-col gap-0.5 liquid-glass z-50"
+              style={{ borderRadius: "10px", padding: "6px", minWidth: "120px" }}
+            >
+              {CATEGORIES.map(({ label, value }) => (
+                <button
+                  key={value}
+                  onClick={() => { setCategory(value); setFilterOpen(false); }}
+                  className="text-left px-3 py-2 rounded-md font-heading italic transition-colors"
+                  style={{
+                    fontSize: "14px",
+                    color: category === value ? "#1A1A1A" : "rgba(107,101,96,0.7)",
+                    backgroundColor: category === value ? "rgba(166,141,116,0.12)" : "transparent",
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* ── Product grid ── */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -8 }}
-          transition={{ duration: 0.35, ease: [0.25, 0, 0.35, 1] }}
-          className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-14"
+        {/* Center: sort abbreviations */}
+        <div className="flex items-center gap-3">
+          <button
+            className="font-body text-text-secondary/50 hover:text-text-secondary transition-colors"
+            style={{ fontSize: "11px", letterSpacing: "0.04em" }}
+          >
+            (w.)
+          </button>
+          <button
+            className="font-body text-text-secondary/50 hover:text-text-secondary transition-colors"
+            style={{ fontSize: "11px", letterSpacing: "0.04em" }}
+          >
+            (fr.)
+          </button>
+        </div>
+
+        {/* Right: Feed | Grid */}
+        <div
+          className="flex items-center font-body"
+          style={{ fontSize: "11px", letterSpacing: "0.06em" }}
         >
-          {filtered.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </motion.div>
-      </AnimatePresence>
-
-      {/* ── Empty state ── */}
-      {filtered.length === 0 && (
-        <div className="text-center py-24">
-          <p className="font-body text-sm text-text-secondary">
-            No products in this category yet.
-          </p>
+          <button
+            onClick={() => setView("feed")}
+            className="transition-colors"
+            style={{ color: view === "feed" ? "#1A1A1A" : "rgba(107,101,96,0.45)" }}
+          >
+            Feed
+          </button>
+          <span className="mx-2" style={{ color: "rgba(107,101,96,0.3)" }}>|</span>
+          <button
+            onClick={() => setView("grid")}
+            className="transition-colors"
+            style={{ color: view === "grid" ? "#1A1A1A" : "rgba(107,101,96,0.45)" }}
+          >
+            Grid
+          </button>
         </div>
-      )}
+      </div>
+
+      {/* ── Count row ── */}
+      <div
+        className="px-6 md:px-10 flex items-center justify-between"
+        style={{
+          height: "40px",
+          borderBottom: "1px solid rgba(166,141,116,0.12)",
+        }}
+      >
+        <span
+          className="font-body text-text-secondary/50"
+          style={{ fontSize: "11px", letterSpacing: "0.04em" }}
+        >
+          ({String(filtered.length).padStart(2, "0")})
+        </span>
+        <span
+          className="font-heading italic text-text-secondary"
+          style={{ fontSize: "12px" }}
+        >
+          {activeLabel} Products
+        </span>
+      </div>
+
+      {/* ── Product grid / feed ── */}
+      <div className="px-6 md:px-10 py-8">
+        {view === "grid" ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-4 gap-y-10">
+            {filtered.map((product, i) => (
+              <ProductCard key={product.id} product={product} index={i} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-0 divide-y" style={{ borderColor: "rgba(166,141,116,0.14)" }}>
+            {filtered.map((product, i) => (
+              <ProductCard key={product.id} product={product} index={i} feed />
+            ))}
+          </div>
+        )}
+
+        {filtered.length === 0 && (
+          <p className="text-center py-24 font-body text-sm text-text-secondary">
+            No products in this category.
+          </p>
+        )}
+      </div>
     </div>
   );
 }
