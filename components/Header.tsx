@@ -61,7 +61,7 @@ export default function Header() {
   return (
     <>
       {/* ── Top bar ── */}
-      <header className="fixed top-0 left-0 right-0 z-50">
+      <header className="fixed top-0 left-0 right-0 z-50" style={{ touchAction: "manipulation" }}>
         <div className="px-5 md:px-7 h-12 flex items-center justify-between">
 
           {/* Left: lowercase wordmark */}

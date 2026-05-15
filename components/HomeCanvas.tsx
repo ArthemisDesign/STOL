@@ -520,7 +520,7 @@ export default function HomeCanvas() {
       </div>
 
       {/* ── Bottom bar ── */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 px-5 pb-5 pointer-events-none">
+      <div className="fixed bottom-0 left-0 right-0 z-40 px-5 pb-5 pointer-events-none" style={{ touchAction: "manipulation" }}>
         <div className="relative flex items-end justify-between">
 
           {/* Zoom percentage */}
