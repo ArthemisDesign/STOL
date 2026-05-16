@@ -4,8 +4,7 @@ import Image from "next/image";
 import { Pencil, Hammer, Truck } from "lucide-react";
 import { useLanguage } from "@/context/LanguageContext";
 
-const HERO_IMG =
-  "https://cdn.sanity.io/images/ld3h3xvm/production/08c5b2f0c55459cccfd20a364b4c2e31c490ef2e-2962x2962.jpg";
+const HERO_IMG = "/images/andrey-workshop.png";
 
 const PROCESS_ICONS = [Pencil, Hammer, Truck];
 
@@ -14,7 +13,8 @@ export default function AboutPage() {
   const about = T.about;
 
   return (
-    <main className="bg-background">
+    <main className="bg-background relative">
+      <div className="concrete-texture" />
 
       {/* 1. HERO */}
       <section className="relative h-[85vh] min-h-[500px] w-full overflow-hidden">
@@ -27,7 +27,7 @@ export default function AboutPage() {
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+        <div className="absolute inset-0 flex flex-col items-center justify-end px-6 text-center pb-24">
           <div className="w-8 h-px bg-white/40 mb-8" />
           <h1
             className="font-heading font-light text-white leading-tight tracking-tight"
@@ -43,19 +43,37 @@ export default function AboutPage() {
 
       {/* 2. STORY */}
       <section className="max-w-screen-xl mx-auto px-6 md:px-10 py-24 md:py-32">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-20 items-start">
-          <div className="md:sticky md:top-28">
-            <p className="font-body text-[10px] uppercase tracking-[0.25em] text-accent mb-4">
-              {about.studioLabel}
+        {/* Label + title */}
+        <div className="mb-14">
+          <p className="font-body text-[10px] uppercase tracking-[0.25em] text-accent mb-4">
+            {about.studioLabel}
+          </p>
+          <h2
+            className="font-heading font-light text-text-primary leading-tight"
+            style={{ fontSize: "clamp(36px, 4vw, 56px)" }}
+          >
+            {about.storyTitle}
+          </h2>
+        </div>
+
+        {/* Photo + text side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16 items-start">
+          {/* Portrait */}
+          <div className="relative w-full overflow-hidden md:sticky md:top-28" style={{ aspectRatio: "3/4" }}>
+            <Image
+              src="/images/andrey.png"
+              alt="Andrey Mikhaylov — founder of Mikhaylov Carpenter"
+              fill
+              sizes="(max-width: 768px) 100vw, 50vw"
+              className="object-cover object-top"
+            />
+            <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent 72%, #0F0F0F 100%)" }} />
+            <p className="absolute bottom-4 left-5 font-body text-text-secondary/50" style={{ fontSize: "10px", letterSpacing: "0.12em" }}>
+              {about.studioCredit}
             </p>
-            <h2
-              className="font-heading font-light text-text-primary leading-tight"
-              style={{ fontSize: "clamp(36px, 4vw, 56px)" }}
-            >
-              {about.storyTitle}
-            </h2>
           </div>
 
+          {/* Story text */}
           <div className="flex flex-col gap-6 font-body text-[15px] leading-[1.8] text-text-secondary">
             {about.story.map((para, i) => <p key={i}>{para}</p>)}
           </div>
@@ -99,7 +117,7 @@ export default function AboutPage() {
       </section>
 
       {/* 4. MATERIALS */}
-      <section className="bg-[#0A0A0A] border-t border-accent/20">
+      <section className="border-t border-accent/20">
         <div className="max-w-screen-xl mx-auto px-6 md:px-10 py-20 md:py-28">
           <p className="font-body text-[10px] uppercase tracking-[0.25em] text-accent text-center mb-3">
             {about.materialsLabel}
@@ -114,11 +132,15 @@ export default function AboutPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {about.materials.map((mat) => (
               <div key={mat.name} className="flex flex-col gap-4">
-                <div
-                  className="w-full aspect-[3/4]"
-                  style={{ backgroundColor: mat.swatch }}
-                  aria-label={`${mat.name} material swatch`}
-                />
+                <div className="relative w-full overflow-hidden" style={{ aspectRatio: "3/4" }}>
+                  <Image
+                    src={mat.image}
+                    alt={mat.name}
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover"
+                  />
+                </div>
                 <div>
                   <h3 className="font-heading text-[18px] font-light text-text-primary mb-1">{mat.name}</h3>
                   <p className="font-body text-[12px] text-text-secondary leading-relaxed">{mat.description}</p>

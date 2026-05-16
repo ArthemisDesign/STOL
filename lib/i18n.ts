@@ -73,10 +73,10 @@ const t = {
         { label: "To Your Door", body: "Each piece is made in small batches or to individual order. Lead times and delivery are discussed directly with Andrey, without intermediaries." },
       ],
       materials: [
-        { name: "Solid Wood",      description: "Natural wood with a living grain that ages beautifully. Gets better, not worse, with time.",        swatch: "#C8A97A" },
-        { name: "Natural Leather", description: "Used as a surface detail on select table models. Develops a personal patina over years of use.",      swatch: "#5C3D2E" },
-        { name: "Tempered Glass",  description: "Used for tabletops and inlaid elements. Durable, clean, honest.",                                     swatch: "#8A9BA8" },
-        { name: "Metal",           description: "Hand-finished metal bases and structural elements. No chrome, no gloss — raw and solid.",              swatch: "#6B6B6B" },
+        { name: "Oak",    description: "Dense, durable hardwood with a pronounced grain. Strong and honest — gets only more beautiful with age.", image: "/images/wood-oak.png"    },
+        { name: "Maple",  description: "Fine-grained and light in colour. Takes finish well and holds its shape for generations.",                image: "/images/wood-maple.png"  },
+        { name: "Pine",   description: "Warm and light, with a natural resin scent. Soft character, easy to work by hand.",                      image: "/images/wood-pine.png"   },
+        { name: "Walnut", description: "Rich chocolate tones and a flowing grain. One of the most expressive woods in furniture making.",         image: "/images/wood-walnut.png" },
       ],
     },
     trade: {
@@ -189,10 +189,10 @@ const t = {
         { label: "До вашей двери",     body: "Каждый предмет делается небольшими партиями или под индивидуальный заказ. Сроки и доставка обсуждаются напрямую с Андреем, без посредников." },
       ],
       materials: [
-        { name: "Массив дерева",    description: "Натуральное дерево с живой текстурой. Со временем становится только лучше — темнеет, набирает характер.",             swatch: "#C8A97A" },
-        { name: "Натуральная кожа", description: "Используется в отделке части столиков. Приобретает индивидуальную патину с годами использования.",                      swatch: "#5C3D2E" },
-        { name: "Закалённое стекло",description: "Для столешниц и инкрустированных элементов. Прочное, чистое, честное.",                                                 swatch: "#8A9BA8" },
-        { name: "Металл",           description: "Основания и конструктивные элементы с ручной обработкой. Без хрома и глянца — только прочность и форма.",               swatch: "#6B6B6B" },
+        { name: "Дуб",    description: "Плотная, прочная древесина с выраженной текстурой. Надёжная и честная — с годами становится только красивее.", image: "/images/wood-oak.png"    },
+        { name: "Клён",   description: "Мелкозернистая, светлая порода. Хорошо принимает отделку и сохраняет форму поколениями.",                      image: "/images/wood-maple.png"  },
+        { name: "Сосна",  description: "Тёплая и лёгкая, с естественным смоляным ароматом. Мягкий характер, легко поддаётся ручной обработке.",        image: "/images/wood-pine.png"   },
+        { name: "Орех",   description: "Насыщенные шоколадные тона и текучая текстура. Одна из самых выразительных пород в мебельном деле.",            image: "/images/wood-walnut.png" },
       ],
     },
     trade: {
@@ -305,10 +305,10 @@ const t = {
         { label: "送至您手中", body: "每件作品以小批量或按个人订单制作。交货期和配送直接与 Andrey 协商，无需中间人。" },
       ],
       materials: [
-        { name: "实木",     description: "具有天然纹理的木材，优雅老化，越用越好。",                        swatch: "#C8A97A" },
-        { name: "天然皮革", description: "用于部分桌款的表面装饰，随年月使用发展出独特的个性包浆。",       swatch: "#5C3D2E" },
-        { name: "钢化玻璃", description: "用于桌面和镶嵌元素。坚固、干净、诚实。",                          swatch: "#8A9BA8" },
-        { name: "金属",     description: "经手工处理的底座和结构件。无镀铬，无光泽——只有强度和造型。",    swatch: "#6B6B6B" },
+        { name: "橡木",   description: "质地致密、纹理鲜明的硬木。坚固朴实——随岁月流逝愈发美丽。",      image: "/images/wood-oak.png"    },
+        { name: "枫木",   description: "纹理细腻、色泽清浅。易于上漆，形态稳定，可传承数代。",            image: "/images/wood-maple.png"  },
+        { name: "松木",   description: "温暖轻盈，带有天然树脂气息。质地柔软，适合手工精作。",            image: "/images/wood-pine.png"   },
+        { name: "胡桃木", description: "浓郁的巧克力色调与流动的纹理。家具制作中最具表现力的木材之一。", image: "/images/wood-walnut.png" },
       ],
     },
     trade: {

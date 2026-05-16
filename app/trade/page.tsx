@@ -11,7 +11,8 @@ export default function TradePage() {
   const trade = T.trade;
 
   return (
-    <main className="bg-background min-h-screen">
+    <main className="bg-grid relative min-h-screen">
+      <div className="concrete-texture" />
 
       {/* 1. HERO */}
       <section className="pt-40 pb-24 px-6 md:px-10 text-center max-w-screen-md mx-auto">
