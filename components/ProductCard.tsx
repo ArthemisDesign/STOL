@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/lib/products";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface ProductCardProps {
   product: Product;
@@ -12,6 +13,8 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product, index, feed = false }: ProductCardProps) {
+  const { T, locale } = useLanguage();
+  const loc = product.translations[locale];
   const [hovered, setHovered] = useState(false);
   const [img1, img2] = product.images;
   const num = `(${String(index + 1).padStart(2, "0")})`;
@@ -24,18 +27,18 @@ export default function ProductCard({ product, index, feed = false }: ProductCar
         className="group flex items-center gap-6 py-5 hover:bg-[rgba(255,240,210,0.04)] transition-colors px-0"
       >
         <div className="relative flex-shrink-0 overflow-hidden" style={{ width: 72, height: 72, backgroundColor: "#C8C4BE" }}>
-          <Image src={img1} alt={product.name} fill className="object-contain" sizes="72px" />
+          <Image src={img1} alt={loc.name} fill className="object-contain" sizes="72px" />
         </div>
         <div className="flex-1 min-w-0 flex items-baseline gap-3">
           <span className="font-body text-text-secondary/40 flex-shrink-0" style={{ fontSize: "10px", letterSpacing: "0.05em" }}>
             {num}
           </span>
           <span className="font-heading text-text-primary truncate" style={{ fontSize: "15px" }}>
-            {product.name}
+            {loc.name}
           </span>
         </div>
         <span className="font-body text-text-secondary/50 flex-shrink-0" style={{ fontSize: "11px" }}>
-          From ${product.price.toLocaleString()}
+          {T.product.from} {product.price.toLocaleString()} ₽
         </span>
       </Link>
     );
@@ -56,7 +59,7 @@ export default function ProductCard({ product, index, feed = false }: ProductCar
       >
         <Image
           src={img1}
-          alt={product.name}
+          alt={loc.name}
           fill
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           className="object-contain transition-opacity duration-500"
@@ -66,7 +69,7 @@ export default function ProductCard({ product, index, feed = false }: ProductCar
         {img2 && img2 !== img1 && (
           <Image
             src={img2}
-            alt={`${product.name} — alternate`}
+            alt={`${loc.name} — alternate`}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
             className="object-contain transition-opacity duration-500"
@@ -100,7 +103,7 @@ export default function ProductCard({ product, index, feed = false }: ProductCar
           className="font-heading font-light text-text-primary leading-snug truncate"
           style={{ fontSize: "13px" }}
         >
-          {product.name}
+          {loc.name}
         </span>
       </div>
     </Link>

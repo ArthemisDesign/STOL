@@ -82,38 +82,41 @@ function Toolbar({
 }
 
 export default function ProductsPage() {
-  const { T } = useLanguage();
+  const { T, locale } = useLanguage();
   const [filter, setFilter] = useState<FilterValue>("all");
   const [view,   setView]   = useState<ViewMode>("grid");
 
   const filtered = useMemo(() => {
     if (filter === "all") return products;
-    const subs = T.products.subcategories[filter] ?? [];
-    return products.filter(p => subs.includes(p.subcategory));
-  }, [filter, T]);
+    return products.filter(p => p.category === filter);
+  }, [filter]);
 
   const activeLabel  = T.products.filters.find(f => f.value === filter)?.label ?? T.products.filters[0].label;
   const toolbarProps = { filter, setFilter, view, setView, count: filtered.length, activeLabel };
 
   if (view === "feed") {
     return (
-      <div className="fixed inset-x-0 z-20 flex flex-col" style={{ top: "48px", bottom: 0, backgroundColor: "var(--background)" }}>
-        <div className="flex-shrink-0"><Toolbar {...toolbarProps} /></div>
-        <div className="flex-1 overflow-y-scroll" style={{ scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain" }}>
-          {filtered.map((product, i) => (
-            <div key={product.id} className="relative flex items-center justify-center" style={{ height: "100%", scrollSnapAlign: "start", scrollSnapStop: "always", backgroundColor: "var(--background)" }}>
-              <Link href={`/products/${product.slug}`} className="relative block" style={{ height: "70%", aspectRatio: "3/4" }}>
-                <Image src={product.images[0]} alt={product.name} fill className="object-cover" sizes="(max-width: 768px) 75vw, 45vw" priority={i === 0} />
-              </Link>
-              <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between px-6 md:px-10" style={{ paddingBottom: "22px" }}>
-                <div className="flex items-baseline gap-2">
-                  <span className="font-body text-text-secondary/40" style={{ fontSize: "10px", letterSpacing: "0.04em" }}>({String(i + 1).padStart(2, "0")})</span>
-                  <span className="font-heading font-light text-text-primary" style={{ fontSize: "14px" }}>{product.name}</span>
+      <div className="fixed inset-x-0 z-20 flex flex-col" style={{ top: "48px", bottom: 0, backgroundImage: "url('/wood-texture.png')", backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: "rgba(10,8,6,0.82)", zIndex: 0 }} />
+        <div className="relative flex-shrink-0" style={{ zIndex: 1 }}><Toolbar {...toolbarProps} /></div>
+        <div className="relative flex-1 overflow-y-scroll" style={{ zIndex: 1, scrollSnapType: "y mandatory", WebkitOverflowScrolling: "touch", overscrollBehaviorY: "contain" }}>
+          {filtered.map((product, i) => {
+            const loc = product.translations[locale];
+            return (
+              <div key={product.id} className="relative flex items-center justify-center" style={{ height: "100%", scrollSnapAlign: "start", scrollSnapStop: "always" }}>
+                <Link href={`/products/${product.slug}`} className="relative block" style={{ height: "70%", aspectRatio: "3/4" }}>
+                  <Image src={product.images[0]} alt={loc.name} fill className="object-cover" sizes="(max-width: 768px) 75vw, 45vw" priority={i === 0} />
+                </Link>
+                <div className="absolute bottom-0 left-0 right-0 flex items-end justify-between px-6 md:px-10" style={{ paddingBottom: "22px" }}>
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-body text-text-secondary/40" style={{ fontSize: "10px", letterSpacing: "0.04em" }}>({String(i + 1).padStart(2, "0")})</span>
+                    <span className="font-heading font-light text-text-primary" style={{ fontSize: "14px" }}>{loc.name}</span>
+                  </div>
+                  <span className="font-body text-text-secondary/35" style={{ fontSize: "10px", letterSpacing: "0.12em" }}>{T.products.scroll}</span>
                 </div>
-                <span className="font-body text-text-secondary/35" style={{ fontSize: "10px", letterSpacing: "0.12em" }}>{T.products.scroll}</span>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {filtered.length === 0 && (
             <div className="flex items-center justify-center h-full">
               <p className="font-body text-sm text-text-secondary">{T.products.noProducts}</p>

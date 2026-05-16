@@ -31,9 +31,13 @@ const t = {
         { label: "Cabinets", value: "storage" },
       ],
       subcategories: {
-        tables:  ["Журнальные столики"],
-        storage: ["Книжные шкафы"],
+        tables:  ["Coffee Tables"],
+        storage: ["Bookshelves"],
       } as Record<string, string[]>,
+      categories: {
+        tables:  "Tables",
+        storage: "Storage",
+      } as Record<string, string>,
     },
     product: {
       from:       "From",
@@ -146,6 +150,10 @@ const t = {
         tables:  ["Журнальные столики"],
         storage: ["Книжные шкафы"],
       } as Record<string, string[]>,
+      categories: {
+        tables:  "Столики",
+        storage: "Хранение",
+      } as Record<string, string>,
     },
     product: {
       from:       "От",
@@ -255,9 +263,13 @@ const t = {
         { label: "柜子", value: "storage" },
       ],
       subcategories: {
-        tables:  ["Журнальные столики"],
-        storage: ["Книжные шкафы"],
+        tables:  ["茶几"],
+        storage: ["书架"],
       } as Record<string, string[]>,
+      categories: {
+        tables:  "桌子",
+        storage: "储物",
+      } as Record<string, string>,
     },
     product: {
       from:       "起价",
