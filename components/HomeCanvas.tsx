@@ -95,7 +95,7 @@ function calcTiles(tx: number, ty: number, s: number): TileRange {
 
 /* ─── Component ───────────────────────────────────────────────────────────── */
 export default function HomeCanvas() {
-  const { T: tl } = useLanguage();
+  const { T: tl, locale } = useLanguage();
   const CATS = tl.canvas.filters;
   const [active, setActive] = useState<string>(CATS[0]);
 
@@ -418,7 +418,7 @@ export default function HomeCanvas() {
             w:        card.w,
             img:      p.images[0],
             slug:     p.slug,
-            name:     p.name,
+            name:     p.translations[locale].name,
             category: p.category,
           });
         }
