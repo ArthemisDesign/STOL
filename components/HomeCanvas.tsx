@@ -133,18 +133,62 @@ export default function HomeCanvas() {
     );
   }, []);
 
-  /* ── Loading percentage counter ── */
+  /* ── Preload all product images, drive loader percentage ── */
   useEffect(() => {
-    const duration = 1100; // ms
-    const start    = performance.now();
-    let raf: number;
-    const tick = (now: number) => {
-      const p = Math.min(1, (now - start) / duration);
-      setLoadPct(Math.round(p * 100));
-      if (p < 1) raf = requestAnimationFrame(tick);
+    // Collect every image used on the canvas + key UI assets
+    const urls: string[] = [
+      "/images/loader-bg.png",
+      "/wood-texture.png",
+      ...products.flatMap(p => p.images),
+    ];
+
+    const total   = urls.length;
+    let   loaded  = 0;
+    let   done    = false;
+    const MIN_MS  = 2200; // minimum loader duration
+    const start   = performance.now();
+
+    // Smoothly animate displayed % toward actual progress
+    let displayed = 0;
+    let rafId: number;
+
+    const tick = () => {
+      const target = Math.round((loaded / total) * 100);
+      // lerp displayed toward target (never go backward, never exceed 99 until truly done)
+      if (displayed < target) displayed = Math.min(100, Math.min(target, displayed + 2));
+      setLoadPct(displayed);
+      if (!done || displayed < 100) rafId = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    rafId = requestAnimationFrame(tick);
+
+    const tryFinish = () => {
+      const elapsed = performance.now() - start;
+      const wait    = Math.max(0, MIN_MS - elapsed);
+      setTimeout(() => {
+        done = true;
+        displayed = 100;
+        setLoadPct(100);
+        // small pause at 100% before hiding
+        setTimeout(() => setMounted(true), 300);
+      }, wait);
+    };
+
+    let finished = false;
+    const onLoad = () => {
+      loaded++;
+      if (!finished && loaded >= total) { finished = true; tryFinish(); }
+    };
+
+    urls.forEach(src => {
+      const img = new window.Image();
+      img.onload  = onLoad;
+      img.onerror = onLoad; // count errors too so we never get stuck
+      img.src     = src;
+      if (img.complete) onLoad(); // already cached
+    });
+
+    return () => cancelAnimationFrame(rafId);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ── Mount: randomise card positions, center viewport ── */
@@ -163,7 +207,6 @@ export default function HomeCanvas() {
     T.current = { x: vw / 2, y: vh / 2, s: INIT_SCALE };
     commit();
     syncTiles();
-    setMounted(true);
   }, [commit, syncTiles]);
 
   /* ── Zoom inertia ── */
@@ -451,7 +494,7 @@ export default function HomeCanvas() {
           transitionDelay: mounted ? "0.15s" : "0s",
         }}
       >
-        {/* Background image */}
+        {/* Background image with filter */}
         <div
           style={{
             position:           "absolute",
@@ -459,17 +502,9 @@ export default function HomeCanvas() {
             backgroundImage:    "url('/images/loader-bg.png')",
             backgroundSize:     "cover",
             backgroundPosition: "center",
+            filter:             "grayscale(40%) brightness(0.6) contrast(1.1)",
           }}
         />
-        {/* Dark overlay */}
-        <div className="absolute inset-0" style={{ backgroundColor: "rgba(10,8,6,0.55)" }} />
-
-        {/* Brand — top left */}
-        <div className="absolute top-5 left-5">
-          <p className="font-heading font-bold tracking-[0.07em] text-text-primary leading-tight" style={{ fontSize: "14px" }}>
-            MIKHAYLOV<br />CARPENTER
-          </p>
-        </div>
 
         {/* Percentage — bottom left */}
         <div className="absolute bottom-6 left-6">
