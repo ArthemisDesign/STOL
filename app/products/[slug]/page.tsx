@@ -16,9 +16,10 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const product = getProductBySlug(params.slug);
   if (!product) return {};
+  const ru = product.translations.ru;
   return {
-    title: `${product.name} — Mikhaylov Carpenter`,
-    description: product.description,
+    title: `${ru.name} — Mikhaylov Carpenter`,
+    description: ru.description,
   };
 }
 
