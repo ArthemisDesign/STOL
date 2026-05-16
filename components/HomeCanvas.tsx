@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback, useLayoutEffect } from "react";
 import Link from "next/link";
 import { products } from "@/lib/products";
 import { useLanguage } from "@/context/LanguageContext";
 
 /* ─── Zoom constants ──────────────────────────────────────────────────────── */
-const INIT_SCALE = 0.50;
 const MIN_SCALE  = 0.32;
 const MAX_SCALE  = 1.45;
+const INIT_SCALE = MIN_SCALE; // always start at 0%
 
 /*
  * ─── Tile layout ────────────────────────────────────────────────────────────
@@ -99,6 +99,7 @@ export default function HomeCanvas() {
   /* Reset to "All" equivalent whenever language changes */
   useEffect(() => { setActive(CATS[0]); }, [CATS]);
   const [mounted,    setMounted]   = useState(false);
+  const [loadPct,    setLoadPct]   = useState(0);
   const [grabbing,   setGrabbing]  = useState(false);
   const toDisplayPct = (s: number) =>
     Math.round(((s - MIN_SCALE) / (MAX_SCALE - MIN_SCALE)) * 100);
@@ -130,6 +131,20 @@ export default function HomeCanvas() {
         ? prev   // bail out – no re-render
         : next
     );
+  }, []);
+
+  /* ── Loading percentage counter ── */
+  useEffect(() => {
+    const duration = 1100; // ms
+    const start    = performance.now();
+    let raf: number;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      setLoadPct(Math.round(p * 100));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   /* ── Mount: randomise card positions, center viewport ── */
@@ -427,6 +442,46 @@ export default function HomeCanvas() {
   /* ─── Render ──────────────────────────────────────────────────────────── */
   return (
     <>
+      {/* ── Loading screen ── */}
+      <div
+        className="fixed inset-0 z-[100] pointer-events-none overflow-hidden"
+        style={{
+          opacity:         mounted ? 0 : 1,
+          transition:      "opacity 0.9s cubic-bezier(0.16,1,0.3,1)",
+          transitionDelay: mounted ? "0.15s" : "0s",
+        }}
+      >
+        {/* Background image */}
+        <div
+          style={{
+            position:           "absolute",
+            inset:              0,
+            backgroundImage:    "url('/images/loader-bg.png')",
+            backgroundSize:     "cover",
+            backgroundPosition: "center",
+          }}
+        />
+        {/* Dark overlay */}
+        <div className="absolute inset-0" style={{ backgroundColor: "rgba(10,8,6,0.55)" }} />
+
+        {/* Brand — top left */}
+        <div className="absolute top-5 left-5">
+          <p className="font-heading font-bold tracking-[0.07em] text-text-primary leading-tight" style={{ fontSize: "14px" }}>
+            MIKHAYLOV<br />CARPENTER
+          </p>
+        </div>
+
+        {/* Percentage — bottom left */}
+        <div className="absolute bottom-6 left-6">
+          <span
+            className="font-heading font-light tabular-nums text-text-primary"
+            style={{ fontSize: "clamp(52px, 8vw, 96px)", lineHeight: 1, letterSpacing: "-0.02em" }}
+          >
+            {String(loadPct).padStart(2, "0")}
+            <span style={{ fontSize: "0.4em", opacity: 0.6, marginLeft: "4px" }}>%</span>
+          </span>
+        </div>
+      </div>
       {/* ── Canvas viewport ── */}
       <div
         ref={containerRef}
