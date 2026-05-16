@@ -20,7 +20,7 @@ export default function ProductGallery({ images, name }: ProductGalleryProps) {
   return (
     <div className="flex flex-col gap-3">
       {/* ── Main image ── */}
-      <div className="relative aspect-square w-full overflow-hidden bg-background">
+      <div className={`relative aspect-square w-full overflow-hidden ${selected === images.length - 1 ? "" : "bg-background"}`}>
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={selected}
@@ -50,7 +50,7 @@ export default function ProductGallery({ images, name }: ProductGalleryProps) {
               key={i}
               onClick={() => select(i)}
               aria-label={`View image ${i + 1}`}
-              className={`relative aspect-square flex-1 overflow-hidden bg-background transition-all duration-200
+              className={`relative aspect-square flex-1 overflow-hidden transition-all duration-200 ${i === images.length - 1 ? "" : "bg-background"}
                 ${selected === i
                   ? "ring-1 ring-text-primary ring-offset-1"
                   : "opacity-50 hover:opacity-75"
