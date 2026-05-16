@@ -94,14 +94,14 @@ export default function Header() {
           <div className="flex items-center gap-3">
             {laTime && (
               <span
-                className="font-body tabular-nums text-text-secondary/55 hidden sm:block"
+                className="font-body tabular-nums text-text-secondary/55"
                 style={{ fontSize: "10px", letterSpacing: "0.07em" }}
               >
                 {laTime}
               </span>
             )}
             <span
-              className="font-body text-text-secondary/45 hidden sm:block"
+              className="font-body text-text-secondary/45"
               style={{ fontSize: "10px", letterSpacing: "0.06em" }}
             >
               {T.location}
@@ -165,14 +165,14 @@ export default function Header() {
         </div>
       </header>
 
-      {/* ── Morphing pill / card ── */}
+      {/* ── Morphing pill / card — top on desktop, bottom on mobile ── */}
       <div
         ref={menuRef}
-        className="fixed top-2 left-1/2 z-50"
+        className="fixed left-1/2 z-50 md:top-2 bottom-6 md:bottom-auto"
         style={{ transform: "translateX(-50%)" }}
       >
         <div
-          className="liquid-glass"
+          className="liquid-glass flex flex-col-reverse md:flex-col"
           style={{
             width:        menuOpen ? "300px" : "220px",
             borderRadius: menuOpen ? "12px"  : "999px",
@@ -180,7 +180,7 @@ export default function Header() {
             transition:   `width ${dur} ${ease}, border-radius ${dur} ${ease}`,
           }}
         >
-          {/* Top row */}
+          {/* Pill trigger row */}
           <div className="relative flex items-center h-9 px-4">
             <button
               onClick={() => setMenuOpen(v => !v)}
@@ -214,7 +214,7 @@ export default function Header() {
             </span>
           </div>
 
-          {/* Collapsible nav */}
+          {/* Collapsible nav — expands upward on mobile, downward on desktop */}
           <div
             style={{
               display:          "grid",
@@ -223,7 +223,7 @@ export default function Header() {
             }}
           >
             <div style={{ overflow: "hidden", opacity: menuOpen ? 1 : 0, transition: `opacity 0.22s ease ${menuOpen ? "0.12s" : "0s"}` }}>
-              <div style={{ borderTop: "1px solid rgba(255,255,255,0.35)" }} />
+              <div style={{ borderBottom: "1px solid rgba(255,255,255,0.35)" }} className="md:border-b-0 md:border-t" />
 
               <nav className="flex flex-col px-4">
                 {NAV_LINKS.map(({ label, href }, i) => (
@@ -246,7 +246,6 @@ export default function Header() {
 
               <div className="px-4 py-4 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.30)" }}>
                 <a href="mailto:hello@mikhaylovcarpenter.com" className="font-body tracking-[0.14em] text-text-secondary hover:text-text-primary transition-colors" style={{ fontSize: "11px" }}>em.</a>
-                <span className="font-heading text-text-secondary/30" style={{ fontSize: "14px" }}>✳</span>
                 <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="font-body tracking-[0.14em] text-text-secondary hover:text-text-primary transition-colors" style={{ fontSize: "11px" }}>ig.</a>
               </div>
             </div>
