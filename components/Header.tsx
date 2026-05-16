@@ -94,14 +94,14 @@ export default function Header() {
           <div className="flex items-center gap-3">
             {laTime && (
               <span
-                className="font-body tabular-nums text-text-secondary/55"
+                className="font-body tabular-nums text-text-secondary/90"
                 style={{ fontSize: "10px", letterSpacing: "0.07em" }}
               >
                 {laTime}
               </span>
             )}
             <span
-              className="font-body text-text-secondary/45"
+              className="font-body text-text-secondary/80"
               style={{ fontSize: "10px", letterSpacing: "0.06em" }}
             >
               {T.location}
@@ -113,7 +113,7 @@ export default function Header() {
                 onClick={() => setGlobeOpen(v => !v)}
                 aria-label="Switch language"
                 className="flex items-center gap-1 transition-colors"
-                style={{ color: globeOpen ? "#EDE8E0" : "rgba(160,150,140,0.55)" }}
+                style={{ color: globeOpen ? "#EDE8E0" : "rgba(200,190,180,0.90)" }}
               >
                 <Globe size={13} strokeWidth={1.4} />
                 <span className="font-body" style={{ fontSize: "10px", letterSpacing: "0.06em" }}>

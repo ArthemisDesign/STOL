@@ -23,10 +23,15 @@ export default function AboutPage() {
           alt="Mikhaylov Carpenter workshop — craftspeople at work"
           fill
           sizes="100vw"
-          className="object-cover"
+          className="object-cover object-center"
           priority
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60" />
+        {/* Subtle overall darkening */}
+        <div className="absolute inset-0" style={{ backgroundColor: "rgba(0,0,0,0.35)" }} />
+        {/* Strong fade into background at the bottom */}
+        <div className="absolute inset-x-0 bottom-0" style={{ height: "55%", background: "linear-gradient(to bottom, transparent 0%, #0F0F0F 100%)" }} />
+        {/* Softer fade at the top */}
+        <div className="absolute inset-x-0 top-0" style={{ height: "25%", background: "linear-gradient(to top, transparent 0%, #0F0F0F 100%)" }} />
         <div className="absolute inset-0 flex flex-col items-center justify-end px-6 text-center pb-24">
           <div className="w-8 h-px bg-white/40 mb-8" />
           <h1
