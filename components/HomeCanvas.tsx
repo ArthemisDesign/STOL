@@ -22,12 +22,11 @@ const MAX_SCALE  = 1.45;
 const TILE_W = 3400;
 const TILE_H = 2700;
 
+// IDs cycle through 1–4 (actual products). 15 cards, varied sizes.
 const BASE_CARDS: Array<{ id: number; w: number }> = [
-  { id: 1,  w: 310 }, { id: 2,  w: 330 }, { id: 3,  w: 270 },
-  { id: 4,  w: 300 }, { id: 5,  w: 285 }, { id: 6,  w: 280 },
-  { id: 7,  w: 285 }, { id: 8,  w: 265 }, { id: 9,  w: 265 },
-  { id: 10, w: 305 }, { id: 11, w: 285 }, { id: 12, w: 305 },
-  { id: 13, w: 280 }, { id: 14, w: 265 }, { id: 15, w: 305 },
+  { id: 1, w: 310 }, { id: 2, w: 285 }, { id: 3, w: 330 }, { id: 4, w: 270 }, { id: 1, w: 295 },
+  { id: 2, w: 260 }, { id: 3, w: 305 }, { id: 4, w: 280 }, { id: 1, w: 320 }, { id: 2, w: 265 },
+  { id: 3, w: 290 }, { id: 4, w: 315 }, { id: 1, w: 275 }, { id: 2, w: 300 }, { id: 3, w: 255 },
 ];
 
 type TileCard = { id: number; x: number; y: number; w: number };
@@ -37,12 +36,11 @@ type TileCard = { id: number; x: number; y: number; w: number };
  * Called once per page load (inside useEffect, client-side only).
  */
 function generateTilePositions(): TileCard[] {
-  const EDGE  = 200; // min distance from tile border
-  const GAP   = 110; // guaranteed gap between any two cards
-  const TRIES = 800; // attempts per card before skipping
+  const EDGE  = 200;
+  const GAP   = 110;
+  const TRIES = 800;
 
   const placed: TileCard[] = [];
-
   const order = [...BASE_CARDS].sort(() => Math.random() - 0.5);
 
   for (const card of order) {
@@ -64,7 +62,6 @@ function generateTilePositions(): TileCard[] {
       if (!clash) { chosen = { x, y }; break; }
     }
 
-    // Only place if a non-overlapping spot was found
     if (chosen) placed.push({ id: card.id, x: chosen.x, y: chosen.y, w: card.w });
   }
 

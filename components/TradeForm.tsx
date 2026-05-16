@@ -126,7 +126,7 @@ export default function TradeForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-text-primary text-white font-body text-[11px] uppercase tracking-[0.2em] py-4 transition-opacity duration-200 hover:opacity-80 disabled:opacity-50"
+          className="w-full bg-accent text-background font-body text-[11px] uppercase tracking-[0.2em] py-4 transition-opacity duration-200 hover:opacity-80 disabled:opacity-50"
         >
           {loading ? f.submitting : f.submit}
         </button>
