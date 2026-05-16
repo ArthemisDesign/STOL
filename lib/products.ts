@@ -20,30 +20,10 @@ export interface Product {
 }
 
 const IMGS: Record<string, string[]> = {
-  "step":   [
-    "/products/step/image%20173487.png",
-    "/products/step/image%20173470.png",
-    "/products/step/image%20173486.png",
-    "/products/step/image%20173488.png",
-  ],
-  "gambit": [
-    "/products/gambit/image%20173493.png",
-    "/products/gambit/image%20173471.png",
-    "/products/gambit/image%20173492.png",
-    "/products/gambit/image%20173494.png",
-  ],
-  "mayak":  [
-    "/products/mayak/image%20173490.png",
-    "/products/mayak/image%20173472.png",
-    "/products/mayak/image%20173489.png",
-    "/products/mayak/image%20173491.png",
-  ],
-  "arhiv":  [
-    "/products/arhiv/image%20173495.png",
-    "/products/arhiv/image%20173473.png",
-    "/products/arhiv/image%20173496.png",
-    "/products/arhiv/image%20173497.png",
-  ],
+  "step":   ["/products/step/1.png",   "/products/step/2.png",   "/products/step/3.png",   "/products/step/4.png"],
+  "gambit": ["/products/gambit/1.png", "/products/gambit/2.png", "/products/gambit/3.png", "/products/gambit/4.png"],
+  "mayak":  ["/products/mayak/1.png",  "/products/mayak/2.png",  "/products/mayak/3.png",  "/products/mayak/4.png"],
+  "arhiv":  ["/products/arhiv/1.png",  "/products/arhiv/2.png",  "/products/arhiv/3.png",  "/products/arhiv/4.png"],
 };
 
 export const products: Product[] = [

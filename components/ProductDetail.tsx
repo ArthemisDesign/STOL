@@ -94,7 +94,7 @@ export default function ProductDetail({ product }: { product: Product }) {
             <div className="flex flex-col gap-3 pt-2">
               <a
                 href={`mailto:hello@mikhaylovcarpenter.com?subject=Inquiry: ${product.name}`}
-                className="w-full bg-text-primary text-white font-body text-[11px] uppercase tracking-[0.2em] py-4 text-center transition-opacity duration-200 hover:opacity-80"
+                className="w-full bg-accent text-background font-body text-[11px] uppercase tracking-[0.2em] py-4 text-center transition-opacity duration-200 hover:opacity-80"
               >
                 {T.product.inquire}
               </a>
