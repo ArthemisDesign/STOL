@@ -12,8 +12,17 @@ export default function ProductDetail({ product }: { product: Product }) {
 
   const categoryLabel = T.products.categories[product.category] ?? product.category;
 
+  const bgImage = product.images[3] ?? product.images[0];
+
   return (
-    <div className="min-h-screen bg-background pt-24 pb-24">
+    <div className="min-h-screen pt-24 pb-24 relative" style={{
+      backgroundImage: `url('${bgImage}')`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundAttachment: "fixed",
+    }}>
+      <div className="absolute inset-0 pointer-events-none" style={{ backgroundColor: "rgba(10,8,6,0.88)" }} />
+      <div className="relative" style={{ zIndex: 1 }}>
       <div className="max-w-screen-xl mx-auto px-6 md:px-10">
 
         {/* Breadcrumb */}
@@ -43,7 +52,7 @@ export default function ProductDetail({ product }: { product: Product }) {
                 {loc.name}
               </h1>
               <p className="font-body text-[15px] text-text-secondary">
-                {T.product.from} {product.price.toLocaleString()} ₽
+                {T.product.from} {String(product.price).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0")} ₽
               </p>
             </div>
 
@@ -112,6 +121,7 @@ export default function ProductDetail({ product }: { product: Product }) {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

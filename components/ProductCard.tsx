@@ -38,7 +38,7 @@ export default function ProductCard({ product, index, feed = false }: ProductCar
           </span>
         </div>
         <span className="font-body text-text-secondary/50 flex-shrink-0" style={{ fontSize: "11px" }}>
-          {T.product.from} {product.price.toLocaleString()} ₽
+          {T.product.from} {String(product.price).replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0")} ₽
         </span>
       </Link>
     );
