@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useMemo, useCallback, useLayoutEffect } from "react";
+import { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { products } from "@/lib/products";
 import { useLanguage } from "@/context/LanguageContext";
@@ -437,7 +437,7 @@ export default function HomeCanvas() {
       }
     }
     return result;
-  }, [tiles, tileCards]);
+  }, [tiles, tileCards, locale]);
 
   /* ─── Render ──────────────────────────────────────────────────────────── */
   return (
